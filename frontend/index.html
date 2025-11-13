@@ -6,36 +6,51 @@
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <main>
-    <h1>Prüfungsfragen verwalten</h1>
+
+  <header class="topbar">
+    <h1>Exam Manager</h1>
+  </header>
+
+  <main class="container">
 
     <section class="card">
       <h2>Frage hinzufügen</h2>
+
       <form id="qForm">
-        <label>Fach
-          <select id="subject"></select>
-        </label>
 
-        <label>Schwierigkeitsgrad
-          <select id="difficulty">
-            <option value="easy">Leicht</option>
-            <option value="medium">Mittel</option>
-            <option value="hard">Schwer</option>
-          </select>
-        </label>
+        <label for="subject">Fach</label>
+        <select id="subject" class="input"></select>
 
-        <label>Fragetext
-          <textarea id="qtext" required></textarea>
-        </label>
+        <label for="difficulty">Schwierigkeitsgrad</label>
+        <select id="difficulty" class="input">
+          <option value="easy">Leicht</option>
+          <option value="medium">Mittel</option>
+          <option value="hard">Schwer</option>
+        </select>
+
+        <label for="qtext">Fragetext</label>
+        <textarea id="qtext" class="input" required></textarea>
 
         <div class="options">
-          <div><input placeholder="Option A" class="opt" required /><label><input type="radio" name="correct" value="0" required> korrekt</label></div>
-          <div><input placeholder="Option B" class="opt" required /><label><input type="radio" name="correct" value="1"> korrekt</label></div>
-          <div><input placeholder="Option C" class="opt" required /><label><input type="radio" name="correct" value="2"> korrekt</label></div>
-          <div><input placeholder="Option D" class="opt" required /><label><input type="radio" name="correct" value="3"> korrekt</label></div>
+          <div class="option-row">
+            <input type="text" placeholder="Option A" class="opt input" required />
+            <label><input type="radio" name="correct" value="0" required> korrekt</label>
+          </div>
+          <div class="option-row">
+            <input type="text" placeholder="Option B" class="opt input" required />
+            <label><input type="radio" name="correct" value="1"> korrekt</label>
+          </div>
+          <div class="option-row">
+            <input type="text" placeholder="Option C" class="opt input" required />
+            <label><input type="radio" name="correct" value="2"> korrekt</label>
+          </div>
+          <div class="option-row">
+            <input type="text" placeholder="Option D" class="opt input" required />
+            <label><input type="radio" name="correct" value="3"> korrekt</label>
+          </div>
         </div>
 
-        <button>Speichern</button>
+        <button type="submit" class="btn-primary">Speichern</button>
       </form>
     </section>
 
@@ -43,7 +58,9 @@
       <h2>Fragen im Fach</h2>
       <div id="questionList"></div>
     </section>
+
   </main>
+
   <script src="js/app.js" defer></script>
 </body>
 </html>
