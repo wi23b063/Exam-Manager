@@ -1,0 +1,3 @@
+RewriteEngine On
+# Alles unter /api/ geht an unsere Bridge-Datei
+RewriteRule ^api/.* api.php [QSA,L]
