@@ -10,6 +10,7 @@ INSERT IGNORE INTO subjects(name) VALUES ('Mathematik'), ('Informatik'), ('Physi
 CREATE TABLE questions (
   id INT AUTO_INCREMENT PRIMARY KEY,
   subject_id INT NOT NULL,
+  type ENUM('SCQ','MCQ','TF','SA','LA') NOT NULL, -- Single Choice Question, Multiple Choice Question, True/False, Short Answer, Long Answer
   text VARCHAR(500) NOT NULL,
   difficulty ENUM('easy','medium','hard') NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -25,4 +26,6 @@ CREATE TABLE options (
   UNIQUE KEY uq_q_idx (question_id, idx),
   CONSTRAINT fk_o_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+
 

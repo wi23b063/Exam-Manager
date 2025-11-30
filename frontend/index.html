@@ -1,11 +1,17 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
   <meta charset="utf-8" />
   <title>ExamManager</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" 
+        rel="stylesheet" 
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" 
+        crossorigin="anonymous">
+
   <link rel="stylesheet" href="css/styles.css" />
 </head>
+
 <body>
 
   <header class="topbar">
@@ -14,48 +20,92 @@
 
   <main class="container">
 
-    <section class="card">
+    <!-- Frage hinzufügen -->
+    <section class="card p-3">
       <h2>Frage hinzufügen</h2>
 
       <form id="qForm">
 
+        <!-- Fach -->
         <label for="subject">Fach</label>
-        <select id="subject" class="input"></select>
+        <select id="subject" class="input form-select"></select>
 
-        <label for="difficulty">Schwierigkeitsgrad</label>
-        <select id="difficulty" class="input">
+        <!-- Schwierigkeitsgrad -->
+        <label for="difficulty" class="mt-2">Schwierigkeitsgrad</label>
+        <select id="difficulty" class="input form-select">
           <option value="easy">Leicht</option>
           <option value="medium">Mittel</option>
           <option value="hard">Schwer</option>
         </select>
 
-        <label for="qtext">Fragetext</label>
-        <textarea id="qtext" class="input" required></textarea>
+        <!-- Fragetyp -->
+        <label for="qtype" class="mt-2">Fragetyp</label>
+        <select id="qtype" class="input form-select">
+          <option value="SCQ">Single Choice</option>
+          <option value="MCQ">Multiple Choice</option>
+        </select>
 
-        <div class="options">
-          <div class="option-row">
-            <input type="text" placeholder="Option A" class="opt input" required />
-            <label><input type="radio" name="correct" value="0" required> korrekt</label>
+        <!-- Fragetext -->
+        <label for="qtext" class="mt-2">Fragetext</label>
+        <textarea id="qtext" class="input form-control" required></textarea>
+
+        <!-----------------------------------EDITOR SECTION je nach QUESTION TYP------------------------------------------------------------>
+        <!-- 🔹 SCQ-Editor (Single Choice) -->
+        <div class="q-editor mt-2" data-editor="SCQ">
+          <h3 class="h6">Single Choice Optionen</h3>
+          <div class="option-row d-flex align-items-center mb-2">
+            <input type="text" placeholder="Option A" class="opt-scq input form-control me-2"  />
+            <label><input type="radio" name="scq_correct" value="0" > korrekt</label>
           </div>
-          <div class="option-row">
-            <input type="text" placeholder="Option B" class="opt input" required />
-            <label><input type="radio" name="correct" value="1"> korrekt</label>
+          <div class="option-row d-flex align-items-center mb-2">
+            <input type="text" placeholder="Option B" class="opt-scq input form-control me-2"  />
+            <label><input type="radio" name="scq_correct" value="1"> korrekt</label>
           </div>
-          <div class="option-row">
-            <input type="text" placeholder="Option C" class="opt input" required />
-            <label><input type="radio" name="correct" value="2"> korrekt</label>
+          <div class="option-row d-flex align-items-center mb-2">
+            <input type="text" placeholder="Option C" class="opt-scq input form-control me-2"  />
+            <label><input type="radio" name="scq_correct" value="2"> korrekt</label>
           </div>
-          <div class="option-row">
-            <input type="text" placeholder="Option D" class="opt input" required />
-            <label><input type="radio" name="correct" value="3"> korrekt</label>
+          <div class="option-row d-flex align-items-center mb-2">
+            <input type="text" placeholder="Option D" class="opt-scq input form-control me-2"  />
+            <label><input type="radio" name="scq_correct" value="3"> korrekt</label>
           </div>
         </div>
 
-        <button type="submit" class="btn-primary">Speichern</button>
+        <!-- 🔹 MCQ-Editor (Multiple Choice) -->
+        <div class="q-editor mt-2" data-editor="MCQ" style="display:none;">
+          <h3 class="h6">Multiple Choice Optionen</h3>
+          <div class="option-row d-flex align-items-center mb-2">
+            <input type="text" placeholder="Option A" class="opt-mcq input form-control me-2"  />
+            <label><input type="checkbox" name="mcq_correct" value="0"> korrekt</label>
+          </div>
+          <div class="option-row d-flex align-items-center mb-2">
+            <input type="text" placeholder="Option B" class="opt-mcq input form-control me-2"  />
+            <label><input type="checkbox" name="mcq_correct" value="1"> korrekt</label>
+          </div>
+          <div class="option-row d-flex align-items-center mb-2">
+            <input type="text" placeholder="Option C" class="opt-mcq input form-control me-2"  />
+            <label><input type="checkbox" name="mcq_correct" value="2"> korrekt</label>
+          </div>
+          <div class="option-row d-flex align-items-center mb-2">
+            <input type="text" placeholder="Option D" class="opt-mcq input form-control me-2"  />
+            <label><input type="checkbox" name="mcq_correct" value="3"> korrekt</label>
+          </div>
+        </div>
+
+        <!-- Short Answer-Editor (später) -->
+
+        <!-- Long Answer-Editor (später) -->
+
+        <!-----------------------------EDITOR SECTION END------------------------------------------->
+
+        <!-- Buttons -->
+        <button type="submit" id="saveBtn" class="btn btn-primary mt-3">Speichern</button>
+
       </form>
     </section>
 
-    <section class="card">
+    <!-- Fragenliste -->
+    <section class="card p-3 mt-4">
       <h2>Fragen im Fach</h2>
       <div id="questionList"></div>
     </section>
