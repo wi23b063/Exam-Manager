@@ -46,4 +46,117 @@ class QuestionController {
     $this->pdo->commit();
     jsonOut(['id'=>$qid], 201);
   }
+
+  public function delete(int $id): void {
+    if ($id <= 0) {
+      jsonOut(['error' => 'invalid id'], 400);
+    }
+
+    try {
+      $this->pdo->beginTransaction();
+
+      
+      $stOpt = $this->pdo->prepare("DELETE FROM options WHERE question_id = ?");
+      $stOpt->execute([$id]);
+
+      $stQ = $this->pdo->prepare("DELETE FROM questions WHERE id = ?");
+      $stQ->execute([$id]);
+
+      $this->pdo->commit();
+
+      if ($stQ->rowCount() === 0) {
+        // nothing deleted -> question didn't exist
+        jsonOut(['error' => 'not found'], 404);
+      } else {
+        // success, no content
+        jsonOut(null, 204);
+      }
+    } catch (Throwable $e) {
+      $this->pdo->rollBack();
+      error_log($e);
+      jsonOut(['error' => 'internal error'], 500);
+    }
+  }
+public function show(int $id): void {
+  if ($id <= 0) {
+    jsonOut(['error' => 'invalid id'], 400);
+  }
+
+  $q = $this->pdo->prepare("
+    SELECT q.id, q.subject_id, q.text, q.difficulty,
+           JSON_ARRAYAGG(JSON_OBJECT('id',o.id,'idx',o.idx,'text',o.text,'is_correct',o.is_correct)) AS options
+    FROM questions q
+    JOIN options o ON o.question_id = q.id
+    WHERE q.id = ?
+    GROUP BY q.id
+  ");
+  $q->execute([$id]);
+  $row = $q->fetch(PDO::FETCH_ASSOC);
+
+  if (!$row) {
+    jsonOut(['error' => 'not found'], 404);
+  }
+
+  $row['options'] = json_decode($row['options'], true);
+  jsonOut($row);   // frontend expects { id, subject_id, text, difficulty, options[...] }
+}
+
+public function update(int $id): void {
+  if ($id <= 0) {
+    jsonOut(['error' => 'invalid id'], 400);
+  }
+
+  $d = body(); // same as in create()
+
+  // validate exactly like create()
+  $errors = [];
+  if (!isset($d['text']) || trim($d['text'])==='') $errors[]='text';
+  if (!in_array($d['difficulty']??'', ['easy','medium','hard'], true)) $errors[]='difficulty';
+  $sid = (int)($d['subject_id'] ?? 0); if ($sid<=0) $errors[]='subject_id';
+  if (!isset($d['options']) || count($d['options'])!==4) $errors[]='options(4)';
+  else {
+    $correct = array_sum(array_map(fn($o)=>!empty($o['is_correct'])?1:0, $d['options']));
+    if ($correct!==1) $errors[]='exactly one option must be correct';
+    foreach ($d['options'] as $o) if (trim($o['text']??'')==='') $errors[]='option text';
+  }
+  if ($errors) jsonOut(['error'=>'validation','fields'=>$errors], 422);
+
+  try {
+    $this->pdo->beginTransaction();
+
+    // update main question
+    $st = $this->pdo->prepare("
+      UPDATE questions
+      SET subject_id = ?, text = ?, difficulty = ?
+      WHERE id = ?
+    ");
+    $st->execute([$sid, trim($d['text']), $d['difficulty'], $id]);
+
+    if ($st->rowCount() === 0) {
+      // question doesn't exist
+      $this->pdo->rollBack();
+      jsonOut(['error' => 'not found'], 404);
+    }
+
+    // replace options (frontend doesn't send option IDs, so we recreate them)
+    $stDel = $this->pdo->prepare("DELETE FROM options WHERE question_id = ?");
+    $stDel->execute([$id]);
+
+    $st2 = $this->pdo->prepare("
+      INSERT INTO options(question_id, idx, text, is_correct)
+      VALUES (?,?,?,?)
+    ");
+    foreach ($d['options'] as $i => $o) {
+      $st2->execute([$id, $i, trim($o['text']), !empty($o['is_correct']) ? 1 : 0]);
+    }
+
+    $this->pdo->commit();
+    jsonOut(['id' => $id], 200);
+  } catch (Throwable $e) {
+    $this->pdo->rollBack();
+    error_log($e);
+    jsonOut(['error' => 'internal error'], 500);
+  }
+}
+
 }

@@ -19,12 +19,10 @@ CREATE TABLE questions (
 CREATE TABLE options (
   id INT AUTO_INCREMENT PRIMARY KEY,
   question_id INT NOT NULL,
-  idx TINYINT NOT NULL,              -- 0..3
+  idx TINYINT NOT NULL,             
   text VARCHAR(300) NOT NULL,
   is_correct TINYINT(1) NOT NULL DEFAULT 0,
   UNIQUE KEY uq_q_idx (question_id, idx),
   CONSTRAINT fk_o_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Seed-Fächer
-INSERT INTO subjects(name) VALUES ('Mathematik'), ('Informatik'), ('Physik');
