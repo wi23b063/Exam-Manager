@@ -58,51 +58,68 @@ class QuestionController {
     $errors[] = 'type';
   }
 
-  // ---------------- Optionen validieren (SCQ / MCQ / TF) ----------------
-  $options = $d['options'] ?? null;
-  if (!is_array($options)) {
-    $errors[] = 'options';
-  } else {
-    $count = count($options);
-
-    if ($type === 'TF') {
-      // True/False: genau 2 Optionen erwartet
-      if ($count !== 2) {
-        $errors[] = 'options(2)';
-      }
+  // ---------------- Optionen validieren (SCQ / MCQ / TF / SA / LA) ----------------
+    $options = $d['options'] ?? null;
+    if (!is_array($options)) {
+      $errors[] = 'options';
     } else {
-      // SCQ, MCQ (und evtl. andere) → 4 Optionen
-      if ($count !== 4) {
-        $errors[] = 'options(4)';
+      $count = count($options);
+
+      if ($type === 'TF') {
+        // True/False: genau 2 Optionen erwartet
+        if ($count !== 2) {
+          $errors[] = 'options(2)';
+        }
+      } elseif ($type === 'SA' || $type === 'LA') {
+        // Short/Long Answer: genau 1 "Lösungs"-Eintrag
+        if ($count !== 1) {
+          $errors[] = 'options(1)';
+        }
+      } else {
+        // SCQ, MCQ → 4 Optionen
+        if ($count !== 4) {
+          $errors[] = 'options(4)';
+        }
+      }
+
+      $correctCount = array_sum(array_map(
+        fn($o) => !empty($o['is_correct']) ? 1 : 0,
+        $options
+      ));
+
+      // Für SCQ: genau eine richtige
+      if ($type === 'SCQ' && $correctCount !== 1) {
+        $errors[] = 'exactly one option must be correct (SCQ)';
+      }
+
+      // Für MCQ: mindestens eine richtige
+      if ($type === 'MCQ' && $correctCount < 1) {
+        $errors[] = 'at least one option must be correct (MCQ)';
+      }
+
+      // Für TF: genau eine richtige
+      if ($type === 'TF' && $correctCount !== 1) {
+        $errors[] = 'exactly one option must be correct (TF)';
+      }
+
+      // Für SA: genau eine richtige
+      if ($type === 'SA' && $correctCount !== 1) {
+        $errors[] = 'exactly one option must be correct (SA)';
+      }
+
+      // Für LA: genau eine richtige (Musterlösung)
+      if ($type === 'LA' && $correctCount !== 1) {
+        $errors[] = 'exactly one option must be correct (LA)';
+      }
+
+      foreach ($options as $o) {
+        if (trim($o['text'] ?? '') === '') {
+          $errors[] = 'option text';
+        }
       }
     }
+    
 
-    $correctCount = array_sum(array_map(
-      fn($o) => !empty($o['is_correct']) ? 1 : 0,
-      $options
-    ));
-
-    // Für SCQ: genau eine richtige
-    if ($type === 'SCQ' && $correctCount !== 1) {
-      $errors[] = 'exactly one option must be correct (SCQ)';
-    }
-
-    // Für MCQ: mindestens eine richtige
-    if ($type === 'MCQ' && $correctCount < 1) {
-      $errors[] = 'at least one option must be correct (MCQ)';
-    }
-
-    // Für TF: genau eine richtige (True ODER False)
-    if ($type === 'TF' && $correctCount !== 1) {
-      $errors[] = 'exactly one option must be correct (TF)';
-    }
-
-    foreach ($options as $o) {
-      if (trim($o['text'] ?? '') === '') {
-        $errors[] = 'option text';
-      }
-    }
-  }
   // ----------------------------------------------------------------------
 
   if ($errors) {
@@ -227,47 +244,60 @@ class QuestionController {
       $errors[] = 'type';
     }
 
-    // ---------------- Optionen validieren (SCQ / MCQ / TF) ----------------
+    // ---------------- Optionen validieren (SCQ / MCQ / TF / SA / LA) ----------------
     $options = $d['options'] ?? null;
     if (!is_array($options)) {
-      $errors[] = 'options';
+        $errors[] = 'options';
     } else {
-      $count = count($options);
+        $count = count($options);
 
-      if ($type === 'TF') {
-        if ($count !== 2) {
-          $errors[] = 'options(2)';
+        if ($type === 'TF') {
+            if ($count !== 2) {
+                $errors[] = 'options(2)';
+            }
+        } elseif ($type === 'SA' || $type === 'LA') {
+            if ($count !== 1) {
+                $errors[] = 'options(1)';
+            }
+        } else {
+            if ($count !== 4) {
+                $errors[] = 'options(4)';
+            }
         }
-      } else {
-        if ($count !== 4) {
-          $errors[] = 'options(4)';
+
+        $correctCount = array_sum(array_map(
+            fn($o) => !empty($o['is_correct']) ? 1 : 0,
+            $options
+        ));
+
+        if ($type === 'SCQ' && $correctCount !== 1) {
+            $errors[] = 'exactly one option must be correct (SCQ)';
         }
-      }
 
-      $correctCount = array_sum(array_map(
-        fn($o) => !empty($o['is_correct']) ? 1 : 0,
-        $options
-      ));
-
-      if ($type === 'SCQ' && $correctCount !== 1) {
-        $errors[] = 'exactly one option must be correct (SCQ)';
-      }
-
-      if ($type === 'MCQ' && $correctCount < 1) {
-        $errors[] = 'at least one option must be correct (MCQ)';
-      }
-
-      if ($type === 'TF' && $correctCount !== 1) {
-        $errors[] = 'exactly one option must be correct (TF)';
-      }
-
-      foreach ($options as $o) {
-        if (trim($o['text'] ?? '') === '') {
-          $errors[] = 'option text';
+        if ($type === 'MCQ' && $correctCount < 1) {
+            $errors[] = 'at least one option must be correct (MCQ)';
         }
-      }
+
+        if ($type === 'TF' && $correctCount !== 1) {
+            $errors[] = 'exactly one option must be correct (TF)';
+        }
+
+        if ($type === 'SA' && $correctCount !== 1) {
+            $errors[] = 'exactly one option must be correct (SA)';
+        }
+
+        if ($type === 'LA' && $correctCount !== 1) {
+            $errors[] = 'exactly one option must be correct (LA)';
+        }
+
+        foreach ($options as $o) {
+            if (trim($o['text'] ?? '') === '') {
+                $errors[] = 'option text';
+            }
+        }
     }
     // ----------------------------------------------------------------------
+
 
     if ($errors) {
       jsonOut(['error' => 'validation', 'fields' => $errors], 422);

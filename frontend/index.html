@@ -44,6 +44,8 @@
           <option value="SCQ">Single Choice</option>
           <option value="MCQ">Multiple Choice</option>
           <option value="TF" >True / False</option>
+          <option value="SA">Short Answer (Fill in the Blanks)</option>
+          <option value="LA">Long Answer (Essay)</option>
         </select>
 
         <!-- Fragetext -->
@@ -110,11 +112,32 @@
           </div>
         </div>
 
+        <!-- 🔹 SA-Editor (Short Answer) -->
+        <div class="q-editor mt-2" data-editor="SA" style="display:none;">
+          <h3 class="h6">Short Answer</h3>
+          <p class="small text-muted">
+            Formuliere die Frage oben. Hier trägst du die korrekte kurze Antwort ein.
+            Im Fragetext kannst du z. B. eine Lücke mit "___" markieren.
+          </p>
+          <input type="text"
+                id="sa_answer"
+                class="input form-control"
+                placeholder="korrekte Antwort" />
+        </div>
 
+        <!-- 🔹 LA-Editor (Long Answer / Aufsatz) -->
+        <div class="q-editor mt-2" data-editor="LA" style="display:none;">
+          <h3 class="h6">Long Answer / Aufsatz</h3>
+          <p class="small text-muted">
+            Optional: Musterlösung oder Stichworte, die für die Bewertung wichtig sind.
+          </p>
+          <textarea id="la_answer"
+                    class="input form-control"
+                    rows="4"
+                    placeholder="Musterlösung oder Stichpunkte"></textarea>
+        </div>
 
-        <!-- Short Answer-Editor (später) -->
-
-        <!-- Long Answer-Editor (später) -->
+        
 
         <!-----------------------------EDITOR SECTION END------------------------------------------->
 

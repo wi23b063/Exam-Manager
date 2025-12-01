@@ -211,16 +211,12 @@ async function onListClick(e) {
           if (checks[i]) checks[i].checked = !!o.is_correct;
         });
 
-
     } else if (type === "TF") {
-      // TF: nur merken, ob true oder false korrekt ist
       const tfRadios = $$('input[name="tf_correct"]');
-      // Standard: alles erstmal false
       tfRadios.forEach((r) => (r.checked = false));
 
       const correctOpt = q.options.find((o) => o.is_correct);
       if (correctOpt) {
-        // Wir gehen davon aus, dass Texte "True"/"False" sind
         if (correctOpt.text.toLowerCase().startsWith("t")) {
           const rTrue = tfRadios.find((r) => r.value === "true");
           if (rTrue) rTrue.checked = true;
@@ -230,8 +226,17 @@ async function onListClick(e) {
         }
       }
 
-     // Hier weiter Question Typen ergänzen später!!!
+    } else if (type === "SA") {
+      const inp = $("#sa_answer");
+      if (inp && q.options && q.options.length > 0) {
+        inp.value = q.options[0].text || "";
+      }
 
+    } else if (type === "LA") {
+      const ta = $("#la_answer");
+      if (ta && q.options && q.options.length > 0) {
+        ta.value = q.options[0].text || "";
+      }
 
     } else {
       // Default: SCQ
@@ -244,6 +249,7 @@ async function onListClick(e) {
           if (radios[i]) radios[i].checked = !!o.is_correct;
         });
     }
+
 
 
     currentEditId = q.id;
@@ -320,12 +326,37 @@ async function onSubmit(e) {
       { text: "False", is_correct: val === "false" },
     ];
 
-    // Hier weiter Question Typen ergänzen später!!!
+  } else if (type === "SA") {
+    const inp = $("#sa_answer");
+    const ans = inp ? inp.value.trim() : "";
+
+    if (!text || !ans) {
+      alert("Bitte Fragetext und die korrekte Short-Answer eingeben.");
+      return;
+    }
+
+    options = [
+      { text: ans, is_correct: true }
+    ];
+
+  } else if (type === "LA") {
+    const ta = $("#la_answer");
+    const ans = ta ? ta.value.trim() : "";
+
+    if (!text || !ans) {
+      alert("Bitte Fragetext und eine Musterlösung für Long Answer eingeben.");
+      return;
+    }
+
+    options = [
+      { text: ans, is_correct: true }
+    ];
 
   } else {
     alert("Unsupported question type im Frontend: " + type);
     return;
   }
+
 
   const payload = {
     subject_id: sid,
