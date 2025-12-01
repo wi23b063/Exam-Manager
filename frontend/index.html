@@ -43,6 +43,7 @@
         <select id="qtype" class="input form-select">
           <option value="SCQ">Single Choice</option>
           <option value="MCQ">Multiple Choice</option>
+          <option value="TF" >True / False</option>
         </select>
 
         <!-- Fragetext -->
@@ -91,6 +92,25 @@
             <label><input type="checkbox" name="mcq_correct" value="3"> korrekt</label>
           </div>
         </div>
+
+        <!-- 🔹 TF-Editor (True / False) -->
+        <div class="q-editor mt-2" data-editor="TF" style="display:none;">
+          <h3 class="h6">True / False</h3>
+          <div class="mb-2">
+            <label>
+              <input type="radio" name="tf_correct" value="true">
+              Aussage ist WAHR
+            </label>
+          </div>
+          <div class="mb-2">
+            <label>
+              <input type="radio" name="tf_correct" value="false">
+              Aussage ist FALSCH
+            </label>
+          </div>
+        </div>
+
+
 
         <!-- Short Answer-Editor (später) -->
 

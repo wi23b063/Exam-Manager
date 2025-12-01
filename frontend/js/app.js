@@ -210,7 +210,31 @@ async function onListClick(e) {
           if (inputs[i]) inputs[i].value = o.text;
           if (checks[i]) checks[i].checked = !!o.is_correct;
         });
+
+
+    } else if (type === "TF") {
+      // TF: nur merken, ob true oder false korrekt ist
+      const tfRadios = $$('input[name="tf_correct"]');
+      // Standard: alles erstmal false
+      tfRadios.forEach((r) => (r.checked = false));
+
+      const correctOpt = q.options.find((o) => o.is_correct);
+      if (correctOpt) {
+        // Wir gehen davon aus, dass Texte "True"/"False" sind
+        if (correctOpt.text.toLowerCase().startsWith("t")) {
+          const rTrue = tfRadios.find((r) => r.value === "true");
+          if (rTrue) rTrue.checked = true;
+        } else {
+          const rFalse = tfRadios.find((r) => r.value === "false");
+          if (rFalse) rFalse.checked = true;
+        }
+      }
+
+     // Hier weiter Question Typen ergänzen später!!!
+
+
     } else {
+      // Default: SCQ
       const inputs = $$(".opt-scq");
       const radios = $$('input[name="scq_correct"]');
       q.options
@@ -220,6 +244,7 @@ async function onListClick(e) {
           if (radios[i]) radios[i].checked = !!o.is_correct;
         });
     }
+
 
     currentEditId = q.id;
     setEditMode(true);
@@ -260,6 +285,7 @@ async function onSubmit(e) {
       text: t,
       is_correct: i === correctIdx,
     }));
+
   } else if (type === "MCQ") {
     const optInputs = $$(".opt-mcq");
     const opts = optInputs.map((i) => i.value.trim());
@@ -279,6 +305,23 @@ async function onSubmit(e) {
       text: t,
       is_correct: correctValues.includes(i),
     }));
+
+  } else if (type === "TF") {
+    const fd = new FormData(form);
+    const val = fd.get("tf_correct"); // "true" oder "false"
+
+    if (!val) {
+      alert("Bitte auswählen, ob die Aussage wahr oder falsch ist.");
+      return;
+    }
+
+    options = [
+      { text: "True",  is_correct: val === "true" },
+      { text: "False", is_correct: val === "false" },
+    ];
+
+    // Hier weiter Question Typen ergänzen später!!!
+
   } else {
     alert("Unsupported question type im Frontend: " + type);
     return;

@@ -34,85 +34,107 @@ class QuestionController {
   }
 
   public function create(): void {
-    $d = body();
-    // expected: text, difficulty, subject_id, type, options[4]{text, is_correct}
-    $errors = [];
+  $d = body();
+  // expected: text, difficulty, subject_id, type, options[]{text, is_correct}
+  $errors = [];
 
-    if (!isset($d['text']) || trim($d['text']) === '') {
-      $errors[] = 'text';
-    }
-
-    if (!in_array($d['difficulty'] ?? '', ['easy','medium','hard'], true)) {
-      $errors[] = 'difficulty';
-    }
-
-    $sid = (int)($d['subject_id'] ?? 0);
-    if ($sid <= 0) {
-      $errors[] = 'subject_id';
-    }
-
-    // type validieren
-    $type = $d['type'] ?? 'SCQ';  // Default: Single Choice
-    $allowedTypes = ['SCQ','MCQ','TF','SA','LA'];
-    if (!in_array($type, $allowedTypes, true)) {
-      $errors[] = 'type';
-    }
-
-    // Optionen validieren
-    if (!isset($d['options']) || count($d['options']) !== 4) {
-      $errors[] = 'options(4)';
-    } else {
-      $correctCount = array_sum(array_map(
-        fn($o) => !empty($o['is_correct']) ? 1 : 0,
-        $d['options']
-      ));
-
-      // Für SCQ: genau eine richtige
-      if ($type === 'SCQ' && $correctCount !== 1) {
-        $errors[] = 'exactly one option must be correct (SCQ)';
-      }
-
-      // Für MCQ: mindestens eine richtige
-      if ($type === 'MCQ' && $correctCount < 1) {
-        $errors[] = 'at least one option must be correct (MCQ)';
-      }
-
-      foreach ($d['options'] as $o) {
-        if (trim($o['text'] ?? '') === '') {
-          $errors[] = 'option text';
-        }
-      }
-    }
-
-    if ($errors) {
-      jsonOut(['error' => 'validation', 'fields' => $errors], 422);
-    }
-
-    $this->pdo->beginTransaction();
-
-    $st = $this->pdo->prepare("
-      INSERT INTO questions(subject_id, type, text, difficulty)
-      VALUES (?,?,?,?)
-    ");
-    $st->execute([$sid, $type, trim($d['text']), $d['difficulty']]);
-    $qid = (int)$this->pdo->lastInsertId();
-
-    $st2 = $this->pdo->prepare("
-      INSERT INTO options(question_id, idx, text, is_correct)
-      VALUES (?,?,?,?)
-    ");
-    foreach ($d['options'] as $i => $o) {
-      $st2->execute([
-        $qid,
-        $i,
-        trim($o['text']),
-        !empty($o['is_correct']) ? 1 : 0
-      ]);
-    }
-
-    $this->pdo->commit();
-    jsonOut(['id' => $qid], 201);
+  if (!isset($d['text']) || trim($d['text']) === '') {
+    $errors[] = 'text';
   }
+
+  if (!in_array($d['difficulty'] ?? '', ['easy','medium','hard'], true)) {
+    $errors[] = 'difficulty';
+  }
+
+  $sid = (int)($d['subject_id'] ?? 0);
+  if ($sid <= 0) {
+    $errors[] = 'subject_id';
+  }
+
+  // type validieren
+  $type = $d['type'] ?? 'SCQ';  // Default: Single Choice
+  $allowedTypes = ['SCQ','MCQ','TF','SA','LA'];
+  if (!in_array($type, $allowedTypes, true)) {
+    $errors[] = 'type';
+  }
+
+  // ---------------- Optionen validieren (SCQ / MCQ / TF) ----------------
+  $options = $d['options'] ?? null;
+  if (!is_array($options)) {
+    $errors[] = 'options';
+  } else {
+    $count = count($options);
+
+    if ($type === 'TF') {
+      // True/False: genau 2 Optionen erwartet
+      if ($count !== 2) {
+        $errors[] = 'options(2)';
+      }
+    } else {
+      // SCQ, MCQ (und evtl. andere) → 4 Optionen
+      if ($count !== 4) {
+        $errors[] = 'options(4)';
+      }
+    }
+
+    $correctCount = array_sum(array_map(
+      fn($o) => !empty($o['is_correct']) ? 1 : 0,
+      $options
+    ));
+
+    // Für SCQ: genau eine richtige
+    if ($type === 'SCQ' && $correctCount !== 1) {
+      $errors[] = 'exactly one option must be correct (SCQ)';
+    }
+
+    // Für MCQ: mindestens eine richtige
+    if ($type === 'MCQ' && $correctCount < 1) {
+      $errors[] = 'at least one option must be correct (MCQ)';
+    }
+
+    // Für TF: genau eine richtige (True ODER False)
+    if ($type === 'TF' && $correctCount !== 1) {
+      $errors[] = 'exactly one option must be correct (TF)';
+    }
+
+    foreach ($options as $o) {
+      if (trim($o['text'] ?? '') === '') {
+        $errors[] = 'option text';
+      }
+    }
+  }
+  // ----------------------------------------------------------------------
+
+  if ($errors) {
+    jsonOut(['error' => 'validation', 'fields' => $errors], 422);
+  }
+
+  $this->pdo->beginTransaction();
+
+  $st = $this->pdo->prepare("
+    INSERT INTO questions(subject_id, type, text, difficulty)
+    VALUES (?,?,?,?)
+  ");
+  $st->execute([$sid, $type, trim($d['text']), $d['difficulty']]);
+  $qid = (int)$this->pdo->lastInsertId();
+
+  $st2 = $this->pdo->prepare("
+    INSERT INTO options(question_id, idx, text, is_correct)
+    VALUES (?,?,?,?)
+  ");
+  foreach ($options as $i => $o) {
+    $st2->execute([
+      $qid,
+      $i,
+      trim($o['text']),
+      !empty($o['is_correct']) ? 1 : 0
+    ]);
+  }
+
+  $this->pdo->commit();
+  jsonOut(['id' => $qid], 201);
+}
+
 
   public function delete(int $id): void {
     if ($id <= 0) {
@@ -178,107 +200,126 @@ class QuestionController {
   }
 
   public function update(int $id): void {
-  if ($id <= 0) {
-    jsonOut(['error' => 'invalid id'], 400);
-  }
-
-  $d = body(); // same as in create()
-  $errors = [];
-
-  if (!isset($d['text']) || trim($d['text']) === '') {
-    $errors[] = 'text';
-  }
-
-  if (!in_array($d['difficulty'] ?? '', ['easy','medium','hard'], true)) {
-    $errors[] = 'difficulty';
-  }
-
-  $sid = (int)($d['subject_id'] ?? 0);
-  if ($sid <= 0) {
-    $errors[] = 'subject_id';
-  }
-
-  // type validieren (wie in create)
-  $type = $d['type'] ?? 'SCQ';
-  $allowedTypes = ['SCQ','MCQ','TF','SA','LA'];
-  if (!in_array($type, $allowedTypes, true)) {
-    $errors[] = 'type';
-  }
-
-  if (!isset($d['options']) || count($d['options']) !== 4) {
-    $errors[] = 'options(4)';
-  } else {
-    $correctCount = array_sum(array_map(
-      fn($o) => !empty($o['is_correct']) ? 1 : 0,
-      $d['options']
-    ));
-
-    if ($type === 'SCQ' && $correctCount !== 1) {
-      $errors[] = 'exactly one option must be correct (SCQ)';
+    if ($id <= 0) {
+      jsonOut(['error' => 'invalid id'], 400);
     }
 
-    if ($type === 'MCQ' && $correctCount < 1) {
-      $errors[] = 'at least one option must be correct (MCQ)';
+    $d = body(); // same as in create()
+    $errors = [];
+
+    if (!isset($d['text']) || trim($d['text']) === '') {
+      $errors[] = 'text';
     }
 
-    foreach ($d['options'] as $o) {
-      if (trim($o['text'] ?? '') === '') {
-        $errors[] = 'option text';
+    if (!in_array($d['difficulty'] ?? '', ['easy','medium','hard'], true)) {
+      $errors[] = 'difficulty';
+    }
+
+    $sid = (int)($d['subject_id'] ?? 0);
+    if ($sid <= 0) {
+      $errors[] = 'subject_id';
+    }
+
+    // type validieren (wie in create)
+    $type = $d['type'] ?? 'SCQ';
+    $allowedTypes = ['SCQ','MCQ','TF','SA','LA'];
+    if (!in_array($type, $allowedTypes, true)) {
+      $errors[] = 'type';
+    }
+
+    // ---------------- Optionen validieren (SCQ / MCQ / TF) ----------------
+    $options = $d['options'] ?? null;
+    if (!is_array($options)) {
+      $errors[] = 'options';
+    } else {
+      $count = count($options);
+
+      if ($type === 'TF') {
+        if ($count !== 2) {
+          $errors[] = 'options(2)';
+        }
+      } else {
+        if ($count !== 4) {
+          $errors[] = 'options(4)';
+        }
+      }
+
+      $correctCount = array_sum(array_map(
+        fn($o) => !empty($o['is_correct']) ? 1 : 0,
+        $options
+      ));
+
+      if ($type === 'SCQ' && $correctCount !== 1) {
+        $errors[] = 'exactly one option must be correct (SCQ)';
+      }
+
+      if ($type === 'MCQ' && $correctCount < 1) {
+        $errors[] = 'at least one option must be correct (MCQ)';
+      }
+
+      if ($type === 'TF' && $correctCount !== 1) {
+        $errors[] = 'exactly one option must be correct (TF)';
+      }
+
+      foreach ($options as $o) {
+        if (trim($o['text'] ?? '') === '') {
+          $errors[] = 'option text';
+        }
       }
     }
-  }
+    // ----------------------------------------------------------------------
 
-  if ($errors) {
-    jsonOut(['error' => 'validation', 'fields' => $errors], 422);
-  }
+    if ($errors) {
+      jsonOut(['error' => 'validation', 'fields' => $errors], 422);
+    }
 
-  try {
-    $this->pdo->beginTransaction();
+    try {
+      $this->pdo->beginTransaction();
 
-    // Hauptfrage updaten
-    $st = $this->pdo->prepare("
-      UPDATE questions
-      SET subject_id = ?, type = ?, text = ?, difficulty = ?
-      WHERE id = ?
-    ");
-    $st->execute([$sid, $type, trim($d['text']), $d['difficulty'], $id]);
+      // Hauptfrage updaten
+      $st = $this->pdo->prepare("
+        UPDATE questions
+        SET subject_id = ?, type = ?, text = ?, difficulty = ?
+        WHERE id = ?
+      ");
+      $st->execute([$sid, $type, trim($d['text']), $d['difficulty'], $id]);
 
-    if ($st->rowCount() === 0) {
-      // Kann heißen: ID existiert nicht ODER Daten waren identisch.
-      // Wir prüfen explizit, ob die Frage existiert:
-      $check = $this->pdo->prepare("SELECT id FROM questions WHERE id = ?");
-      $check->execute([$id]);
-      if (!$check->fetch()) {
-        $this->pdo->rollBack();
-        jsonOut(['error' => 'not found'], 404);
+      if ($st->rowCount() === 0) {
+        // Kann heißen: ID existiert nicht ODER Daten waren identisch.
+        // Wir prüfen explizit, ob die Frage existiert:
+        $check = $this->pdo->prepare("SELECT id FROM questions WHERE id = ?");
+        $check->execute([$id]);
+        if (!$check->fetch()) {
+          $this->pdo->rollBack();
+          jsonOut(['error' => 'not found'], 404);
+        }
+        // Wenn sie existiert, machen wir trotzdem weiter (Optionen neu schreiben).
       }
-      // Wenn sie existiert, machen wir trotzdem weiter (Optionen neu schreiben).
+
+      // Optionen ersetzen
+      $stDel = $this->pdo->prepare("DELETE FROM options WHERE question_id = ?");
+      $stDel->execute([$id]);
+
+      $st2 = $this->pdo->prepare("
+        INSERT INTO options(question_id, idx, text, is_correct)
+        VALUES (?,?,?,?)
+      ");
+      foreach ($options as $i => $o) {
+        $st2->execute([
+          $id,
+          $i,
+          trim($o['text']),
+          !empty($o['is_correct']) ? 1 : 0
+        ]);
+      }
+
+      $this->pdo->commit();
+      jsonOut(['id' => $id], 200);
+    } catch (Throwable $e) {
+      $this->pdo->rollBack();
+      error_log($e);
+      jsonOut(['error' => 'internal error'], 500);
     }
-
-    // Optionen ersetzen
-    $stDel = $this->pdo->prepare("DELETE FROM options WHERE question_id = ?");
-    $stDel->execute([$id]);
-
-    $st2 = $this->pdo->prepare("
-      INSERT INTO options(question_id, idx, text, is_correct)
-      VALUES (?,?,?,?)
-    ");
-    foreach ($d['options'] as $i => $o) {
-      $st2->execute([
-        $id,
-        $i,
-        trim($o['text']),
-        !empty($o['is_correct']) ? 1 : 0
-      ]);
-    }
-
-    $this->pdo->commit();
-    jsonOut(['id' => $id], 200);
-  } catch (Throwable $e) {
-    $this->pdo->rollBack();
-    error_log($e);
-    jsonOut(['error' => 'internal error'], 500);
   }
-}
 
 }
