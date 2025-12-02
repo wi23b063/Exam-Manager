@@ -28,4 +28,27 @@ CREATE TABLE options (
 ) ENGINE=InnoDB;
 
 
+CREATE TABLE IF NOT EXISTS exams (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  subject_id INT NOT NULL,
+  name VARCHAR(150) NOT NULL,
+  mode ENUM('manual','auto') NOT NULL,
+  base_difficulty ENUM('easy','medium','hard') DEFAULT NULL,
+  question_count INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_exam_subject
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS exam_questions (
+  exam_id INT NOT NULL,
+  question_id INT NOT NULL,
+  position INT NOT NULL,
+  PRIMARY KEY (exam_id, question_id),
+  CONSTRAINT fk_eq_exam
+    FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,
+  CONSTRAINT fk_eq_question
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 
