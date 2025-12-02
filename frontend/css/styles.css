@@ -5,12 +5,13 @@
 body {
   font-family: Arial, Helvetica, sans-serif;
   margin: 0;
-  background: #f3f7fa; /* helles FH CI Hintergrund */
+  background: #f3f7fa; /* helles FH-CI Hintergrund */
   color: #003b6a;       /* FH Blau */
 }
 
 /* Layout container */
-main, .container {
+main,
+.container {
   max-width: 900px;
   margin: 30px auto;
   padding: 10px;
@@ -29,12 +30,84 @@ h1, h2 {
 
 .topbar {
   background: #003b6a; /* FH Blau */
-  color: white;
-  padding: 20px;
-  text-align: center;
-  font-size: 1.6rem;
-  font-weight: bold;
-  letter-spacing: 1px;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Layout im Header */
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0;
+}
+
+/* Logo + Titelblock */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #6bc200; /* FH Grün */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.brand-subtitle {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+/* Navigation im Header */
+.main-nav {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* "Tabs" als Buttons */
+.nav-btn {
+  border: 1px solid rgba(255,255,255,0.25);
+  background: transparent;
+  color: rgba(255,255,255,0.9);
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nav-btn:hover {
+  background: rgba(255,255,255,0.12);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.3);
+}
+
+.nav-btn.active {
+  background: #6bc200;    /* FH Grün */
+  color: #003b6a;
+  border-color: #6bc200;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
 }
 
 /* ===========================
@@ -68,7 +141,8 @@ label {
 textarea,
 select,
 input[type=text],
-input[type=search] {
+input[type=search],
+input[type=number] {
   width: 100%;
   padding: 10px;
   margin: 6px 0 15px 0;
@@ -81,7 +155,9 @@ input[type=search] {
 
 .input:focus,
 textarea:focus,
-select:focus {
+select:focus,
+input[type=text]:focus,
+input[type=number]:focus {
   border-color: #003b6a;
   outline: none;
 }
@@ -100,7 +176,8 @@ select:focus {
    =========================== */
 
 button,
-.btn-primary {
+.btn-primary,
+.btn-success {
   background: #6bc200;     /* FH Grün */
   color: white;
   padding: 12px 18px;
@@ -109,12 +186,27 @@ button,
   font-size: 1rem;
   cursor: pointer;
   font-weight: bold;
-  transition: 0.2s;
+  transition: background 0.2s ease, transform 0.1s ease;
 }
 
 button:hover,
-.btn-primary:hover {
+.btn-primary:hover,
+.btn-success:hover {
   background: #5aa700;     /* dunkleres Grün */
+}
+
+button:active,
+.btn-primary:active,
+.btn-success:active {
+  transform: translateY(1px);
+}
+
+/* kleine Varianten (Bootstrap-Buttons) */
+.btn-outline-secondary,
+.btn-outline-danger {
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
 }
 
 /* ===========================
@@ -123,12 +215,14 @@ button:hover,
 
 #questionList .question-item,
 .q {
-  background: #e6f2ff; /* hellblau */
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  border-bottom: none;
+    background: #e6f2ff; /* hellblau */
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-bottom: none;
 }
+
+
 
 /* Kleine Info-Badges */
 .badge {
@@ -144,11 +238,29 @@ button:hover,
    =========================== */
 
 @media (max-width: 600px) {
+  .topbar-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .main-nav {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .nav-btn {
+    padding-inline: 0.7rem;
+  }
+
   .card {
     padding: 15px;
   }
 
-  button {
+  button,
+  .btn-primary,
+  .btn-success {
     width: 100%;
   }
 }
