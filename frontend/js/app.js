@@ -195,10 +195,10 @@ async function loadQuestions() {
             </div>
             <div>
               <button class="edit btn btn-sm btn-outline-secondary" type="button">
-                Bearbeiten
+                Edit
               </button>
               <button class="del btn btn-sm btn-outline-danger" type="button">
-                Löschen
+                Delete
               </button>
             </div>
           </div>
