@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS subjects (
 ) ENGINE=InnoDB;
 
 -- Beispiel-Startwerte
-INSERT IGNORE INTO subjects(name) VALUES ('Mathematik'), ('Informatik'), ('Physik');
+INSERT IGNORE INTO subjects(name) VALUES ('Maths'), ('Computer Science'), ('Physics');
 
 
 CREATE TABLE questions (
