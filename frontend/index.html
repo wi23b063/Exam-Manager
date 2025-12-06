@@ -23,16 +23,16 @@
         <div class="brand-logo">EM</div>
         <div class="brand-text">
           <div class="brand-title">Exam Manager</div>
-          <div class="brand-subtitle">Fragen &amp; Prüfungen verwalten</div>
+          <div class="brand-subtitle">Question &amp; Exam Management</div>
         </div>
       </div>
 
       <nav class="main-nav">
         <button class="nav-btn active" type="button" data-view="questions">
-          Fragen hinzufügen
+          Add questions
         </button>
         <button class="nav-btn" type="button" data-view="exams">
-          Prüfungen erstellen
+          Create Exams
         </button>
       </nav>
     </div>
@@ -45,24 +45,24 @@
 
       <!-- Frage hinzufügen -->
       <section class="card p-3">
-        <h2>Frage hinzufügen</h2>
+        <h2>Add question</h2>
 
         <form id="qForm">
 
           <!-- Fach -->
-          <label for="subject">Fach</label>
+          <label for="subject">Subject</label>
           <select id="subject" class="input form-select"></select>
 
           <!-- Schwierigkeitsgrad -->
-          <label for="difficulty" class="mt-2">Schwierigkeitsgrad</label>
+          <label for="difficulty" class="mt-2">Difficulty</label>
           <select id="difficulty" class="input form-select">
-            <option value="easy">Leicht</option>
-            <option value="medium">Mittel</option>
-            <option value="hard">Schwer</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
           </select>
 
-          <!-- Fragetyp -->
-          <label for="qtype" class="mt-2">Fragetyp</label>
+          <!-- Question type -->
+          <label for="qtype" class="mt-2">Question type</label>
           <select id="qtype" class="input form-select">
             <option value="SCQ">Single Choice</option>
             <option value="MCQ">Multiple Choice</option>
@@ -71,14 +71,14 @@
             <option value="LA">Long Answer (Essay)</option>
           </select>
 
-          <!-- Fragetext -->
-          <label for="qtext" class="mt-2">Fragetext</label>
+          <!-- Question text -->
+          <label for="qtext" class="mt-2">Question text</label>
           <textarea id="qtext" class="input form-control" required></textarea>
 
           <!-----------------------------------EDITOR SECTION je nach QUESTION TYP------------------------------------------------------------>
           <!-- 🔹 SCQ-Editor (Single Choice) -->
           <div class="q-editor mt-2" data-editor="SCQ">
-            <h3 class="h6">Single Choice Optionen</h3>
+            <h3 class="h6">Single Choice options</h3>
             <div class="option-row d-flex align-items-center mb-2">
               <input
                 type="text"
@@ -87,7 +87,7 @@
               />
               <label>
                 <input type="radio" name="scq_correct" value="0" />
-                korrekt
+                correct
               </label>
             </div>
             <div class="option-row d-flex align-items-center mb-2">
@@ -98,7 +98,7 @@
               />
               <label>
                 <input type="radio" name="scq_correct" value="1" />
-                korrekt
+                correct
               </label>
             </div>
             <div class="option-row d-flex align-items-center mb-2">
@@ -109,7 +109,7 @@
               />
               <label>
                 <input type="radio" name="scq_correct" value="2" />
-                korrekt
+                correct
               </label>
             </div>
             <div class="option-row d-flex align-items-center mb-2">
@@ -120,14 +120,14 @@
               />
               <label>
                 <input type="radio" name="scq_correct" value="3" />
-                korrekt
+                correct
               </label>
             </div>
           </div>
 
           <!-- 🔹 MCQ-Editor (Multiple Choice) -->
           <div class="q-editor mt-2" data-editor="MCQ" style="display:none;">
-            <h3 class="h6">Multiple Choice Optionen</h3>
+            <h3 class="h6">Multiple Choice options</h3>
             <div class="option-row d-flex align-items-center mb-2">
               <input
                 type="text"
@@ -136,7 +136,7 @@
               />
               <label>
                 <input type="checkbox" name="mcq_correct" value="0" />
-                korrekt
+                correct
               </label>
             </div>
             <div class="option-row d-flex align-items-center mb-2">
@@ -147,7 +147,7 @@
               />
               <label>
                 <input type="checkbox" name="mcq_correct" value="1" />
-                korrekt
+                correct
               </label>
             </div>
             <div class="option-row d-flex align-items-center mb-2">
@@ -158,7 +158,7 @@
               />
               <label>
                 <input type="checkbox" name="mcq_correct" value="2" />
-                korrekt
+                correct
               </label>
             </div>
             <div class="option-row d-flex align-items-center mb-2">
@@ -169,7 +169,7 @@
               />
               <label>
                 <input type="checkbox" name="mcq_correct" value="3" />
-                korrekt
+                correct
               </label>
             </div>
           </div>
@@ -180,13 +180,13 @@
             <div class="mb-2">
               <label>
                 <input type="radio" name="tf_correct" value="true" />
-                Aussage ist WAHR
+                Statement is TRUE
               </label>
             </div>
             <div class="mb-2">
               <label>
                 <input type="radio" name="tf_correct" value="false" />
-                Aussage ist FALSCH
+                Statement is FALSE
               </label>
             </div>
           </div>
@@ -195,9 +195,9 @@
           <div class="q-editor mt-2" data-editor="SA" style="display:none;">
             <h3 class="h6">Short Answer</h3>
             <p class="small text-muted">
-              Formuliere die Frage oben. Hier trägst du die korrekte kurze
-              Antwort ein. Im Fragetext kannst du z.&nbsp;B. eine Lücke mit
-              "___" markieren.
+              Write question above. Then enter short correct answer
+              answer. In the question text, you can, for example, mark a gap with
+              "___".
             </p>
             <input
               type="text"
@@ -209,16 +209,15 @@
 
           <!-- 🔹 LA-Editor (Long Answer / Aufsatz) -->
           <div class="q-editor mt-2" data-editor="LA" style="display:none;">
-            <h3 class="h6">Long Answer / Aufsatz</h3>
+            <h3 class="h6">Long Answer / Essay</h3>
             <p class="small text-muted">
-              Optional: Musterlösung oder Stichworte, die für die Bewertung
-              wichtig sind.
+              Optional: answer template
             </p>
             <textarea
               id="la_answer"
               class="input form-control"
               rows="4"
-              placeholder="Musterlösung oder Stichpunkte"
+              placeholder="Sample answer text"
             ></textarea>
           </div>
 
@@ -226,7 +225,7 @@
 
           <!-- Buttons -->
           <button type="submit" id="saveBtn" class="btn btn-primary mt-3">
-            Speichern
+            Save
           </button>
 
         </form>
@@ -234,7 +233,7 @@
 
       <!-- Fragenliste -->
       <section class="card p-3 mt-4">
-        <h2>Fragen im Fach</h2>
+        <h2>Questions in Subject</h2>
         <div id="questionList"></div>
       </section>
 
@@ -243,28 +242,28 @@
     <!-- ========== VIEW 2: PRÜFUNGEN ERSTELLEN ========== -->
     <section id="view-exams" class="view d-none">
       <section class="card p-3">
-        <h2>Prüfung erstellen</h2>
+        <h2>Create Exam </h2>
 
         <form id="examForm">
-          <!-- Fach -->
-          <label for="examSubject">Fach</label>
+          <!-- Subject -->
+          <label for="examSubject">Subject</label>
           <select id="examSubject" class="form-select mb-2"></select>
 
-          <!-- Name der Prüfung -->
-          <label for="examName" class="mt-2">Prüfungsname</label>
+          <!-- Exam Name -->
+          <label for="examName" class="mt-2">Exam Name</label>
           <input
             type="text"
             id="examName"
             class="form-control"
-            placeholder="z.B. Schularbeit 1"
+            placeholder="z.B. Exam 1"
           />
 
           <!-- Verteilung nach Schwierigkeitsgrad -->
-          <h3 class="h6 mt-3">Fragenverteilung nach Schwierigkeitsgrad</h3>
+          <h3 class="h6 mt-3">Question Distribution by Difficulty Level</h3>
 
           <div class="row g-2">
             <div class="col-md-4">
-              <label for="countEasy" class="form-label">Leicht</label>
+              <label for="countEasy" class="form-label">Easy</label>
               <input
                 type="number"
                 id="countEasy"
@@ -275,7 +274,7 @@
               />
             </div>
             <div class="col-md-4">
-              <label for="countMedium" class="form-label">Mittel</label>
+              <label for="countMedium" class="form-label">Medium</label>
               <input
                 type="number"
                 id="countMedium"
@@ -286,7 +285,7 @@
               />
             </div>
             <div class="col-md-4">
-              <label for="countHard" class="form-label">Schwer</label>
+              <label for="countHard" class="form-label">Hard</label>
               <input
                 type="number"
                 id="countHard"
@@ -299,8 +298,8 @@
           </div>
 
           <div class="mt-2">
-            <strong>Summe:&nbsp;</strong>
-            <span id="examTotal">0</span> Fragen
+            <strong>Total:&nbsp;</strong>
+            <span id="examTotal">0</span> questions
           </div>
 
           <!-- Hinweis & Buttons für Bearbeitungsmodus -->
@@ -310,7 +309,7 @@
               id="btnCreateAutoExam"
               class="btn btn-success mt-2"
             >
-              Automatische Prüfung erstellen
+              Create Automatically generated Exam
             </button>
 
             <button
@@ -318,14 +317,14 @@
               id="btnCancelExamEdit"
               class="btn btn-outline-secondary mt-2 d-none"
             >
-              Bearbeiten abbrechen
+              Cancel Edit
             </button>
 
             <small
               id="examEditHint"
               class="text-muted mt-2 d-none"
             >
-              Bearbeitungsmodus: <span id="examEditName"></span>
+              Edit Mode: <span id="examEditName"></span>
             </small>
           </div>
 
@@ -333,15 +332,15 @@
 
           <!-- Detailbereich für Fragen einer Prüfung -->
           <section class="card p-3 mt-4">
-            <h3 class="h6 mb-3">Prüfungsfragen</h3>
+            <h3 class="h6 mb-3">Exam Questions</h3>
             <div id="examDetail" class="small text-muted">
-              Wähle unten eine Prüfung und klicke auf „Details“, um die Fragen
-              anzuzeigen.
+              Select an exam below and click "Details" to view the questions.
+              
             </div>
           </section>
 
-          <!-- Liste der bestehenden Prüfungen -->
-          <h3 class="h6 mt-4">Bestehende Prüfungen</h3>
+          <!-- List of Existing Exams -->
+          <h3 class="h6 mt-4">Existing Exams</h3>
           <div id="examList" class="mt-2">
             <!-- Karten mit Prüfungen werden per JS eingefügt -->
           </div>

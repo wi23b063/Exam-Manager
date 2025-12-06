@@ -134,9 +134,9 @@ async function loadSubjects() {
     if (examSubjectSel) examSubjectSel.innerHTML = optionsHtml;
 
     if (subjects.length === 0) {
-      if (list) list.innerHTML = "<p>Noch keine Fächer. Lege zuerst eines an.</p>";
+      if (list) list.innerHTML = "<p>No existing subjects. Please create one first.</p>";
       if (examList)
-        examList.innerHTML = "<p>Noch keine Fächer. Lege zuerst eines an.</p>";
+        examList.innerHTML = "<p>No existing subjects. Please create one first.</p>";
       return;
     }
 
@@ -153,11 +153,11 @@ async function loadSubjects() {
     console.error(e);
     if (list) {
       list.innerHTML =
-        "<p><b>Fehler:</b> Konnte Fächer nicht laden. Siehe Console.</p>";
+        "<p><b>Error:</b> Could not load subjects. See console.</p>";
     }
     if (examList) {
       examList.innerHTML =
-        "<p><b>Fehler:</b> Konnte Fächer nicht laden. Siehe Console.</p>";
+        "<p><b>Error:</b> Could not load subjects. See console.</p>";
     }
   }
 }
@@ -169,12 +169,12 @@ async function loadQuestions() {
   if (!subjectSel) return;
   const sid = subjectSel.value;
   if (!sid) {
-    if (list) list.innerHTML = "<p>Kein Fach gewählt.</p>";
+    if (list) list.innerHTML = "<p>No subject selected.</p>";
     return;
   }
 
   try {
-    statusMsg("Lade Fragen …");
+    statusMsg("Loading questions …");
     const res = await api("/questions?subject_id=" + encodeURIComponent(sid));
     if (!res.ok) throw new Error("questions fetch failed: " + res.status);
     const items = await res.json();
@@ -195,10 +195,10 @@ async function loadQuestions() {
             </div>
             <div>
               <button class="edit btn btn-sm btn-outline-secondary" type="button">
-                Bearbeiten
+                Edit
               </button>
               <button class="del btn btn-sm btn-outline-danger" type="button">
-                Löschen
+                Delete
               </button>
             </div>
           </div>
@@ -215,12 +215,12 @@ async function loadQuestions() {
         </div>`
           )
           .join("")
-      : "<p>Keine Fragen im gewählten Fach.</p>";
+      : "<p>No questions in the selected subject.</p>";
   } catch (e) {
     console.error(e);
     if (list) {
       list.innerHTML =
-        "<p><b>Fehler:</b> Konnte Fragen nicht laden. Siehe Console.</p>";
+        "<p><b>Error:</b> Could not load questions. See console.</p>";
     }
   }
 }
@@ -236,17 +236,17 @@ async function onQuestionListClick(e) {
 
   // Löschen
   if (btn.classList.contains("del")) {
-    if (!confirm("Frage wirklich löschen?")) return;
+    if (!confirm("Really delete question?")) return;
     const r = await api("/questions/" + id, { method: "DELETE" });
-    if (!r.ok) return alert("Löschen fehlgeschlagen");
+    if (!r.ok) return alert("Delete failed");
     if (currentEditId === id) cancelEditMode();
     return loadQuestions();
   }
 
-  // Bearbeiten
+  // Edit
   if (btn.classList.contains("edit")) {
     const r = await api("/questions/" + id);
-    if (!r.ok) return alert("Konnte Frage nicht laden");
+    if (!r.ok) return alert("Could not load question");
     const q = await r.json();
 
     if (subjectSel) subjectSel.value = q.subject_id;
@@ -313,7 +313,7 @@ async function onSubmitQuestion(e) {
   e.preventDefault();
 
   if (!subjectSel || !qtext || !diffSel || !typeSel) {
-    alert("Formular nicht vollständig initialisiert.");
+    alert("Form not fully initialized.");
     return;
   }
 
@@ -332,7 +332,7 @@ async function onSubmitQuestion(e) {
 
     if (!text || opts.some((t) => t === "") || isNaN(correctIdx)) {
       alert(
-        "Bitte Fragetext, alle 4 Optionen ausfüllen und genau eine korrekte Option wählen."
+        "Please fill in the question text, all 4 options, and select exactly one correct option."
       );
       return;
     }
@@ -348,11 +348,11 @@ async function onSubmitQuestion(e) {
     const correctValues = fd.getAll("mcq_correct").map((v) => Number(v));
 
     if (!text || opts.some((t) => t === "")) {
-      alert("Bitte Fragetext und alle 4 Optionen ausfüllen.");
+      alert("Please fill in the question text and all 4 options.");
       return;
     }
     if (correctValues.length === 0) {
-      alert("Bitte mindestens eine korrekte Option wählen.");
+      alert("Please select at least one correct option.");
       return;
     }
 
@@ -365,7 +365,7 @@ async function onSubmitQuestion(e) {
     const val = fd.get("tf_correct"); // "true" oder "false"
 
     if (!val) {
-      alert("Bitte auswählen, ob die Aussage wahr oder falsch ist.");
+      alert("Please select whether the statement is true or false.");
       return;
     }
 
@@ -378,7 +378,7 @@ async function onSubmitQuestion(e) {
     const ans = inp ? inp.value.trim() : "";
 
     if (!text || !ans) {
-      alert("Bitte Fragetext und die korrekte Short-Answer eingeben.");
+      alert("Please enter the question text and the correct short answer.");
       return;
     }
 
@@ -388,13 +388,13 @@ async function onSubmitQuestion(e) {
     const ans = ta ? ta.value.trim() : "";
 
     if (!text || !ans) {
-      alert("Bitte Fragetext und eine Musterlösung für Long Answer eingeben.");
+      alert("Please enter the question text and a sample answer for Long Answer.");
       return;
     }
 
     options = [{ text: ans, is_correct: true }];
   } else {
-    alert("Unsupported question type im Frontend: " + type);
+    alert("Unsupported question type in frontend: " + type);
     return;
   }
 
@@ -419,8 +419,8 @@ async function onSubmitQuestion(e) {
   toggleSaving(false);
 
   if (!res.ok) {
-    console.error("save failed", await safeText(res));
-    return alert("Speichern fehlgeschlagen.");
+    console.error("Failed to save", await safeText(res));
+    return alert("Failed to save.");
   }
 
   if (form) form.reset();
@@ -459,7 +459,7 @@ function setupExamView() {
 
   if (examDetailBox) {
     examDetailBox.innerHTML =
-      "Wähle unten eine Prüfung und klicke auf „Details“, um die Fragen anzuzeigen.";
+      "Select an exam below and click on „Details“ to view the questions.";
   }
 }
 
@@ -476,12 +476,11 @@ function updateExamTotal() {
 async function loadExams(subjectId) {
   if (!examList) return;
   if (!subjectId) {
-    examList.innerHTML = "<p>Kein Fach gewählt.</p>";
+    examList.innerHTML = "<p>No subject selected.</p>";
     return;
   }
 
-  examList.innerHTML = "<p>Lade Prüfungen …</p>";
-
+  examList.innerHTML = "<p>Loading exams …</p>";
   try {
     const res = await api("/exams?subject_id=" + encodeURIComponent(subjectId));
     if (!res.ok) throw new Error("exams fetch failed: " + res.status);
@@ -489,7 +488,7 @@ async function loadExams(subjectId) {
     console.log("exams:", exams);
 
     if (!exams.length) {
-      examList.innerHTML = "<p>Keine Prüfungen für dieses Fach.</p>";
+      examList.innerHTML = "<p>No exams for this subject.</p>";
       return;
     }
 
@@ -511,10 +510,10 @@ async function loadExams(subjectId) {
                 Details
               </button>
               <button type="button" class="btn btn-sm btn-outline-secondary exam-edit ms-1">
-                Bearbeiten
+                Edit
               </button>
               <button type="button" class="btn btn-sm btn-outline-danger exam-del ms-1">
-                Löschen
+                Delete
               </button>
             </div>
           </div>
@@ -525,7 +524,7 @@ async function loadExams(subjectId) {
   } catch (e) {
     console.error(e);
     examList.innerHTML =
-      "<p><b>Fehler:</b> Konnte Prüfungen nicht laden. Siehe Console.</p>";
+      "<p><b>Fehler:</b> Could not load exams. See console.</p>";
   }
 }
 
@@ -542,13 +541,13 @@ async function onExamListClick(e) {
   if (!id) return;
 
   if (btn.classList.contains("exam-del")) {
-    if (!confirm("Prüfung wirklich löschen?")) return;
+    if (!confirm("Really delete exam?")) return;
     try {
       const res = await api("/exams/" + id, { method: "DELETE" });
       if (!res.ok && res.status !== 204) {
         const txt = await safeText(res);
         console.error("delete exam failed", txt);
-        alert("Löschen der Prüfung fehlgeschlagen.");
+        alert("Failed to delete exam.");
         return;
       }
       if (examSubjectSel && examSubjectSel.value) {
@@ -557,12 +556,12 @@ async function onExamListClick(e) {
       if (currentExamEditId === id) cancelExamEditMode();
       if (examDetailBox && parseInt(examDetailBox.dataset.examId || "0", 10) === id) {
         examDetailBox.innerHTML =
-          "Wähle unten eine Prüfung und klicke auf „Details“, um die Fragen anzuzeigen.";
+          "Select an exam below and click on „Details“ to view the questions.";
         examDetailBox.dataset.examId = "";
       }
     } catch (err) {
       console.error(err);
-      alert("Netzwerkfehler beim Löschen der Prüfung.");
+      alert("Network error while deleting the exam.");
     }
     return;
   }
@@ -587,7 +586,7 @@ async function startExamEdit(id) {
     if (!res.ok) {
       const txt = await safeText(res);
       console.error("load exam failed", txt);
-      alert("Prüfung konnte nicht geladen werden.");
+      alert("Failed to load exam.");
       return;
     }
 
@@ -633,7 +632,7 @@ async function startExamEdit(id) {
     updateExamTotal();
 
     if (btnCreateAutoExam) {
-      btnCreateAutoExam.textContent = "Änderungen speichern";
+      btnCreateAutoExam.textContent = "Save changes";
     }
     if (btnCancelExamEdit) {
       btnCancelExamEdit.classList.remove("d-none");
@@ -649,7 +648,7 @@ async function startExamEdit(id) {
     if (examsView) examsView.scrollIntoView({ behavior: "smooth" });
   } catch (err) {
     console.error(err);
-    alert("Fehler beim Laden der Prüfung.");
+    alert("Failed to load exam.");
   }
 }
 
@@ -669,7 +668,7 @@ function cancelExamEditMode() {
   updateExamTotal();
 
   if (btnCreateAutoExam) {
-    btnCreateAutoExam.textContent = "Automatische Prüfung erstellen";
+    btnCreateAutoExam.textContent = "Create automatic exam";
   }
   if (btnCancelExamEdit) {
     btnCancelExamEdit.classList.add("d-none");
@@ -687,12 +686,12 @@ function cancelExamEditMode() {
    ========================================================= */
 async function createOrUpdateExam() {
   if (!examSubjectSel) {
-    alert("Kein Prüfungs-Fach-Select gefunden.");
+    alert("No exam subject select found.");
     return;
   }
 
   const subjectId = parseInt(examSubjectSel.value || "0", 10);
-  const name = (examNameInput?.value || "").trim() || "Automatische Prüfung";
+  const name = (examNameInput?.value || "").trim() || "Automatic exam";
 
   const counts = {
     easy: parseInt(countEasy?.value || "0", 10) || 0,
@@ -704,11 +703,11 @@ async function createOrUpdateExam() {
   const isEdit = !!currentExamEditId;
 
   if (!subjectId && !isEdit) {
-    alert("Bitte ein Fach auswählen.");
+    alert("Please select a subject.");
     return;
   }
   if (!isEdit && total <= 0) {
-    alert("Die Gesamtzahl der Fragen muss größer als 0 sein.");
+    alert("The total number of questions must be greater than 0.");
     return;
   }
 
@@ -736,19 +735,19 @@ async function createOrUpdateExam() {
     if (!res.ok) {
       console.error("create/update exam failed:", txt);
       alert(
-        "Fehler beim " +
-          (isEdit ? "Aktualisieren" : "Erstellen") +
-          " der Prüfung: " +
-          (data.error || "Unbekannter Fehler")
+        "Error " +
+          (isEdit ? "updating" : "creating") +
+          " the exam: " +
+          (data.error || "Unknown error")
       );
       return;
     }
 
     if (isEdit) {
-      alert("Prüfung wurde aktualisiert.");
+      alert("Exam updated.");
       cancelExamEditMode();
     } else {
-      alert("Prüfung erstellt (ID: " + (data.id ?? "?") + ").");
+      alert("Exam created (ID: " + (data.id ?? "?") + ").");
       if (examNameInput) examNameInput.value = "";
     }
 
@@ -757,9 +756,9 @@ async function createOrUpdateExam() {
   } catch (err) {
     console.error(err);
     alert(
-      "Netzwerkfehler beim " +
-        (isEdit ? "Aktualisieren" : "Erstellen") +
-        " der Prüfung."
+      "Network error while " +
+        (isEdit ? "updating" : "creating") +
+        " the exam."
     );
   }
 }
@@ -771,7 +770,7 @@ async function showExamDetails(id) {
   const detail = examDetailBox || $("#examDetail");
   if (!detail) return;
 
-  detail.innerHTML = "Lade Prüfungsdetails …";
+  detail.innerHTML = "Loading exam details …";
   detail.dataset.examId = String(id);
 
   try {
@@ -780,7 +779,7 @@ async function showExamDetails(id) {
       const txt = await safeText(res);
       console.error("load exam details failed", txt);
       detail.innerHTML =
-        "<p><b>Fehler:</b> Prüfungsdetails konnten nicht geladen werden.</p>";
+        "<p><b>Error:</b> Failed to load exam details.</p>";
       return;
     }
 
@@ -792,7 +791,7 @@ async function showExamDetails(id) {
     if (!questions.length) {
       detail.innerHTML = `
         <p><strong>${escapeHtml(exam.name)}</strong></p>
-        <p>Diese Prüfung enthält keine Fragen.</p>
+        <p>This exam contains no questions.</p>
       `;
       return;
     }
@@ -845,7 +844,7 @@ async function showExamDetails(id) {
   } catch (err) {
     console.error(err);
     detail.innerHTML =
-      "<p><b>Fehler:</b> Prüfungsdetails konnten nicht geladen werden.</p>";
+      "<p><b>Fehler:</b> Could not load exam details.</p>";
   }
 }
 
@@ -854,7 +853,7 @@ async function showExamDetails(id) {
    ========================================================= */
 function setEditMode(on) {
   const btn = saveBtn || (form && form.querySelector('button[type="submit"]'));
-  if (btn) btn.textContent = on ? "Änderungen speichern" : "Speichern";
+  if (btn) btn.textContent = on ? "Save changes" : "Save";
   if (cancelBtn) cancelBtn.style.display = on ? "inline-block" : "none";
   if (!on) currentEditId = null;
 }
@@ -870,10 +869,10 @@ function toggleSaving(isSaving) {
   if (!btn) return;
   btn.disabled = isSaving;
   btn.textContent = isSaving
-    ? "Speichere …"
+    ? "Saving …"
     : currentEditId
-    ? "Änderungen speichern"
-    : "Speichern";
+    ? "Save changes"
+    : "Save";
 }
 
 function statusMsg(msg) {
