@@ -1,0 +1,109 @@
+<!-- frontend/partials/view-exams.html -->
+
+<section id="view-exams" class="view d-none">
+
+    <!-- Exam hinzufügen -->
+  <section class="card p-3">
+    <h2>Create Exam</h2>
+
+        <form id="examForm">
+
+          <!-- Subject -->
+          <label for="examSubject">Subject</label>
+          <select id="examSubject" class="form-select mb-2"></select>
+
+          <!-- Exam Name -->
+          <label for="examName" class="mt-2">Exam Name</label>
+          <input
+            type="text"
+            id="examName"
+            class="form-control"
+            placeholder="z.B. Exam 1"
+          />
+
+          <!-- Verteilung nach Schwierigkeitsgrad -->
+          <h3 class="h6 mt-3">Question Distribution by Difficulty Level</h3>
+
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label for="countEasy" class="form-label">Easy</label>
+              <input
+                type="number"
+                id="countEasy"
+                class="form-control"
+                min="0"
+                value="0"
+                oninput="updateExamTotal()"
+              />
+            </div>
+            <div class="col-md-4">
+              <label for="countMedium" class="form-label">Medium</label>
+              <input
+                type="number"
+                id="countMedium"
+                class="form-control"
+                min="0"
+                value="0"
+                oninput="updateExamTotal()"
+              />
+            </div>
+            <div class="col-md-4">
+              <label for="countHard" class="form-label">Hard</label>
+              <input
+                type="number"
+                id="countHard"
+                class="form-control"
+                min="0"
+                value="0"
+                oninput="updateExamTotal()"
+              />
+            </div>
+          </div>
+
+          <div class="mt-2">
+            <strong>Total:&nbsp;</strong>
+            <span id="examTotal">0</span> questions
+          </div>
+
+          <!-- Hinweis & Buttons für Bearbeitungsmodus -->
+          <div class="mt-2 d-flex align-items-center flex-wrap gap-2">
+            <button
+              type="button"
+              id="btnCreateAutoExam"
+              class="btn btn-success mt-2"
+            >
+              Create Automatically generated Exam
+            </button>
+
+            <button
+              type="button"
+              id="btnCancelExamEdit"
+              class="btn btn-outline-secondary mt-2 d-none"
+            >
+              Cancel Edit
+            </button>
+
+            <small
+              id="examEditHint"
+              class="text-muted mt-2 d-none"
+            >
+              Edit Mode: <span id="examEditName"></span>
+            </small>
+          </div>
+
+          <hr class="my-4" />
+
+          <!-- Detailbereich für Fragen einer Prüfung -->
+          <section class="card p-3 mt-4">
+            <h3 class="h6 mb-3">Exam Questions</h3>
+            <div id="examDetail" class="small text-muted">
+              Select an exam below and click "Details" to view the questions.
+              
+            </div>
+          </section>
+      </form>
+<!-- List of Existing Exams -->
+          <h3 class="h6 mt-4">Existing Exams</h3>
+          <div id="examList" class="mt-2"></div>
+      </section>
+    </section>
