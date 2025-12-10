@@ -879,3 +879,59 @@ function statusMsg(msg) {
   if (!list) return;
   list.innerHTML = `<p style="opacity:.8">${escapeHtml(msg)}</p>`;
 }
+
+
+// frontend/js/app.js
+
+// Load an HTML partial into a placeholder element
+function loadPartial(placeholderId, url, callback) {
+  const el = document.getElementById(placeholderId);
+  if (!el) return;
+
+  fetch(url)
+    .then((response) => response.text())
+    .then((html) => {
+      el.innerHTML = html;
+      if (typeof callback === "function") callback();
+    })
+    .catch((err) => {
+      console.error("Error loading partial:", url, err);
+    });
+}
+
+// Navigation between "Add questions" and "Create Exams"
+function initViewNavigation() {
+  const navButtons = document.querySelectorAll("[data-view]");
+  const views = document.querySelectorAll(".view");
+
+  if (!navButtons.length || !views.length) return;
+
+  navButtons.forEach((btn) => {
+    btn.addEventListener("click", function () {
+      const target = this.dataset.view; // "questions" oder "exams"
+
+      // Buttons aktiv setzen
+      navButtons.forEach((b) => b.classList.toggle("active", b === this));
+
+      // Views zeigen / verstecken
+      views.forEach((v) => {
+        const isTarget = v.id === "view-" + target;
+        v.classList.toggle("d-none", !isTarget);
+      });
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Load header, then init navigation (buttons live in header)
+  loadPartial("header-placeholder", "partials/header.html", function () {
+    initViewNavigation();
+  });
+
+  // Load footer
+  loadPartial("footer-placeholder", "partials/footer.html");
+
+  // Your existing initialization (if you have any) can go here:
+  // initQuestions();
+  // initExams();
+});
