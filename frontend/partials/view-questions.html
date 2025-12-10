@@ -1,0 +1,198 @@
+<!-- frontend/partials/view-questions.html -->
+
+ <section id="view-questions" class="view">
+
+      <!-- Frage hinzufügen -->
+      <section class="card p-3">
+        <h2>Add question</h2>
+
+        <form id="qForm">
+
+          <!-- Fach -->
+          <label for="subject">Subject</label>
+          <select id="subject" class="form-select mb-2"></select>
+
+          <!-- Schwierigkeitsgrad -->
+          <label for="difficulty" class="mt-2">Difficulty</label>
+          <select id="difficulty" class="form-select mb-2">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+
+          <!-- Question type -->
+          <label for="qtype" class="mt-2">Question type</label>
+          <select id="qtype" class="form-select mb-2">
+            <option value="SCQ">Single Choice</option>
+            <option value="MCQ">Multiple Choice</option>
+            <option value="TF">True / False</option>
+            <option value="SA">Short Answer (Fill in the Blanks)</option>
+            <option value="LA">Long Answer (Essay)</option>
+          </select>
+
+          <!-- Question text -->
+          <label for="qtext" class="mt-2">Question text</label>
+          <textarea id="qtext" class="input form-control" required></textarea>
+
+          <!-----------------------------------EDITOR SECTION je nach QUESTION TYP------------------------------------------------------------>
+          <!-- 🔹 SCQ-Editor (Single Choice) -->
+          <div class="q-editor mt-2" data-editor="SCQ">
+            <h3 class="h6">Single Choice options</h3>
+            <div class="option-row d-flex align-items-center mb-2">
+              <input
+                type="text"
+                placeholder="Option A"
+                class="opt-scq input form-control me-2"
+              />
+              <label>
+                <input type="radio" name="scq_correct" value="0" />
+                correct
+              </label>
+            </div>
+            <div class="option-row d-flex align-items-center mb-2">
+              <input
+                type="text"
+                placeholder="Option B"
+                class="opt-scq input form-control me-2"
+              />
+              <label>
+                <input type="radio" name="scq_correct" value="1" />
+                correct
+              </label>
+            </div>
+            <div class="option-row d-flex align-items-center mb-2">
+              <input
+                type="text"
+                placeholder="Option C"
+                class="opt-scq input form-control me-2"
+              />
+              <label>
+                <input type="radio" name="scq_correct" value="2" />
+                correct
+              </label>
+            </div>
+            <div class="option-row d-flex align-items-center mb-2">
+              <input
+                type="text"
+                placeholder="Option D"
+                class="opt-scq input form-control me-2"
+              />
+              <label>
+                <input type="radio" name="scq_correct" value="3" />
+                correct
+              </label>
+            </div>
+          </div>
+
+          <!-- 🔹 MCQ-Editor (Multiple Choice) -->
+          <div class="q-editor mt-2" data-editor="MCQ" style="display:none;">
+            <h3 class="h6">Multiple Choice options</h3>
+            <div class="option-row d-flex align-items-center mb-2">
+              <input
+                type="text"
+                placeholder="Option A"
+                class="opt-mcq input form-control me-2"
+              />
+              <label>
+                <input type="checkbox" name="mcq_correct" value="0" />
+                correct
+              </label>
+            </div>
+            <div class="option-row d-flex align-items-center mb-2">
+              <input
+                type="text"
+                placeholder="Option B"
+                class="opt-mcq input form-control me-2"
+              />
+              <label>
+                <input type="checkbox" name="mcq_correct" value="1" />
+                correct
+              </label>
+            </div>
+            <div class="option-row d-flex align-items-center mb-2">
+              <input
+                type="text"
+                placeholder="Option C"
+                class="opt-mcq input form-control me-2"
+              />
+              <label>
+                <input type="checkbox" name="mcq_correct" value="2" />
+                correct
+              </label>
+            </div>
+            <div class="option-row d-flex align-items-center mb-2">
+              <input
+                type="text"
+                placeholder="Option D"
+                class="opt-mcq input form-control me-2"
+              />
+              <label>
+                <input type="checkbox" name="mcq_correct" value="3" />
+                correct
+              </label>
+            </div>
+          </div>
+
+          <!-- 🔹 TF-Editor (True / False) -->
+          <div class="q-editor mt-2" data-editor="TF" style="display:none;">
+            <h3 class="h6">True / False</h3>
+            <div class="mb-2">
+              <label>
+                <input type="radio" name="tf_correct" value="true" />
+                Statement is TRUE
+              </label>
+            </div>
+            <div class="mb-2">
+              <label>
+                <input type="radio" name="tf_correct" value="false" />
+                Statement is FALSE
+              </label>
+            </div>
+          </div>
+
+          <!-- 🔹 SA-Editor (Short Answer) -->
+          <div class="q-editor mt-2" data-editor="SA" style="display:none;">
+            <h3 class="h6">Short Answer</h3>
+            <p class="small text-muted">
+              Write question above. Then enter short correct answer
+              answer. In the question text, you can, for example, mark a gap with
+              "___".
+            </p>
+            <input
+              type="text"
+              id="sa_answer"
+              class="input form-control"
+              placeholder="korrekte Antwort"
+            />
+          </div>
+
+          <!-- 🔹 LA-Editor (Long Answer / Aufsatz) -->
+          <div class="q-editor mt-2" data-editor="LA" style="display:none;">
+            <h3 class="h6">Long Answer / Essay</h3>
+            <p class="small text-muted">
+              Optional: answer template
+            </p>
+            <textarea
+              id="la_answer"
+              class="input form-control"
+              rows="4"
+              placeholder="Sample answer text"
+            ></textarea>
+          </div>
+
+          <!-----------------------------EDITOR SECTION END------------------------------------------->
+
+          <!-- Buttons -->
+          <button type="submit" id="saveBtn" class="btn btn-primary mt-3">
+            Save
+          </button>
+
+    </form>
+  </section>
+
+  <!-- Fragenliste -->
+  <section class="card p-3 mt-4">
+    <h2>Questions in Subject</h2>
+    <div id="questionList"></div>
+  </section>
+</section>

@@ -25,47 +25,62 @@ function escapeHtml(s) {
 }
 
 /* =========================================================
-   DOM Refs (Fragen)
+   DOM Refs (Questions + Exams) – will be assigned later
    ========================================================= */
-const subjectSel = $("#subject");
-const diffSel = $("#difficulty");
-const typeSel = $("#qtype");
-const qtext = $("#qtext");
-const list = $("#questionList");
-const form = $("#qForm");
-const saveBtn = $("#saveBtn");
-let cancelBtn = $("#cancelEdit");
 
-/* =========================================================
-   DOM Refs (Prüfungen)
-   ========================================================= */
-const examForm = $("#examForm");
-const examSubjectSel = $("#examSubject");
-const examNameInput = $("#examName");
-const examList = $("#examList");
-const countEasy = $("#countEasy");
-const countMedium = $("#countMedium");
-const countHard = $("#countHard");
-const examTotalSpan = $("#examTotal");
-const btnCreateAutoExam = $("#btnCreateAutoExam");
-const btnCancelExamEdit = $("#btnCancelExamEdit");
-const examEditHint = $("#examEditHint");
-const examEditName = $("#examEditName");
-const examDetailBox = $("#examDetail");
+// Questions view
+let subjectSel,
+  diffSel,
+  typeSel,
+  qtext,
+  list,
+  form,
+  saveBtn,
+  cancelBtn;
+
+// Exams view
+let examForm,
+  examSubjectSel,
+  examNameInput,
+  examList,
+  countEasy,
+  countMedium,
+  countHard,
+  examTotalSpan,
+  btnCreateAutoExam,
+  btnCancelExamEdit,
+  examEditHint,
+  examEditName,
+  examDetailBox;
 
 /* =========================================================
    State
    ========================================================= */
-let currentEditId = null;             // Frage in Bearbeitung
-let currentExamEditId = null;         // Prüfung in Bearbeitung
-let currentExamQuestionIds = [];      // Fragen-IDs der zu bearbeitenden Prüfung
+let currentEditId = null; // question in edit
+let currentExamEditId = null; // exam in edit
+let currentExamQuestionIds = []; // question-ids of exam being edited
 
 /* =========================================================
-   Init
+   Init: Questions view
    ========================================================= */
-document.addEventListener("DOMContentLoaded", async () => {
-  // Cancel-Button für Fragen ggf. erzeugen
-  if (!cancelBtn && form) {
+function initQuestionView() {
+  // query elements now that the partial is in the DOM
+  subjectSel = $("#subject");
+  diffSel = $("#difficulty");
+  typeSel = $("#qtype");
+  qtext = $("#qtext");
+  list = $("#questionList");
+  form = $("#qForm");
+  saveBtn = $("#saveBtn");
+  cancelBtn = $("#cancelEdit");
+
+  if (!form) {
+    console.warn("Question view not found (initQuestionView).");
+    return;
+  }
+
+  // create cancel button once if needed
+  if (!cancelBtn) {
     cancelBtn = document.createElement("button");
     cancelBtn.type = "button";
     cancelBtn.id = "cancelEdit";
@@ -75,29 +90,55 @@ document.addEventListener("DOMContentLoaded", async () => {
     const submitBtn = saveBtn || form.querySelector('button[type="submit"]');
     if (submitBtn) submitBtn.after(cancelBtn);
   }
-  if (cancelBtn) cancelBtn.addEventListener("click", cancelEditMode);
 
-  if (form) form.addEventListener("submit", onSubmitQuestion);
+  cancelBtn.addEventListener("click", cancelEditMode);
+  form.addEventListener("submit", onSubmitQuestion);
   if (list) list.addEventListener("click", onQuestionListClick);
   if (subjectSel) subjectSel.addEventListener("change", loadQuestions);
   if (typeSel) typeSel.addEventListener("change", updateEditorVisibility);
 
-  // Prüfungs-View
-  setupExamView();
-
-  console.log("init OK", {
+  console.log("Question view initialized.", {
     hasSubject: !!subjectSel,
     hasForm: !!form,
     hasType: !!typeSel,
-    hasExamSubject: !!examSubjectSel,
   });
 
   updateEditorVisibility();
-  await loadSubjects();
-});
+}
 
 /* =========================================================
-   Fragen: Editor-Visibility
+   Init: Exams view
+   ========================================================= */
+function initExamView() {
+  examForm = $("#examForm");
+  examSubjectSel = $("#examSubject");
+  examNameInput = $("#examName");
+  examList = $("#examList");
+  countEasy = $("#countEasy");
+  countMedium = $("#countMedium");
+  countHard = $("#countHard");
+  examTotalSpan = $("#examTotal");
+  btnCreateAutoExam = $("#btnCreateAutoExam");
+  btnCancelExamEdit = $("#btnCancelExamEdit");
+  examEditHint = $("#examEditHint");
+  examEditName = $("#examEditName");
+  examDetailBox = $("#examDetail");
+
+  if (!examForm) {
+    console.warn("Exam view not found (initExamView).");
+    return;
+  }
+
+  setupExamView();
+
+  console.log("Exam view initialized.", {
+    hasExamSubject: !!examSubjectSel,
+    hasExamForm: !!examForm,
+  });
+}
+
+/* =========================================================
+   Questions: Editor visibility
    ========================================================= */
 function updateEditorVisibility() {
   const t = typeSel ? typeSel.value : "SCQ";
@@ -108,7 +149,7 @@ function updateEditorVisibility() {
 }
 
 /* =========================================================
-   Fächer laden (Subjects)
+   Subjects
    ========================================================= */
 async function loadSubjects() {
   try {
@@ -134,9 +175,12 @@ async function loadSubjects() {
     if (examSubjectSel) examSubjectSel.innerHTML = optionsHtml;
 
     if (subjects.length === 0) {
-      if (list) list.innerHTML = "<p>No existing subjects. Please create one first.</p>";
+      if (list)
+        list.innerHTML =
+          "<p>No existing subjects. Please create one first.</p>";
       if (examList)
-        examList.innerHTML = "<p>No existing subjects. Please create one first.</p>";
+        examList.innerHTML =
+          "<p>No existing subjects. Please create one first.</p>";
       return;
     }
 
@@ -163,7 +207,7 @@ async function loadSubjects() {
 }
 
 /* =========================================================
-   Fragen laden
+   Questions: load list
    ========================================================= */
 async function loadQuestions() {
   if (!subjectSel) return;
@@ -189,7 +233,9 @@ async function loadQuestions() {
         <div class="q" data-id="${q.id}">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;">
             <div>
-              <span class="badge bg-secondary">${escapeHtml(q.difficulty)}</span>
+              <span class="badge bg-secondary">${escapeHtml(
+                q.difficulty
+              )}</span>
               <span class="badge bg-info ms-1">${escapeHtml(q.type || "SCQ")}</span>
               ${escapeHtml(q.text)}
             </div>
@@ -226,7 +272,7 @@ async function loadQuestions() {
 }
 
 /* =========================================================
-   Fragen: Klick-Handler Liste
+   Questions: click handlers
    ========================================================= */
 async function onQuestionListClick(e) {
   const btn = e.target;
@@ -234,7 +280,7 @@ async function onQuestionListClick(e) {
   if (!card) return;
   const id = Number(card.dataset.id);
 
-  // Löschen
+  // delete
   if (btn.classList.contains("del")) {
     if (!confirm("Really delete question?")) return;
     const r = await api("/questions/" + id, { method: "DELETE" });
@@ -243,7 +289,7 @@ async function onQuestionListClick(e) {
     return loadQuestions();
   }
 
-  // Edit
+  // edit
   if (btn.classList.contains("edit")) {
     const r = await api("/questions/" + id);
     if (!r.ok) return alert("Could not load question");
@@ -307,7 +353,7 @@ async function onQuestionListClick(e) {
 }
 
 /* =========================================================
-   Fragen: Submit (create/update)
+   Questions: submit (create/update)
    ========================================================= */
 async function onSubmitQuestion(e) {
   e.preventDefault();
@@ -362,7 +408,7 @@ async function onSubmitQuestion(e) {
     }));
   } else if (type === "TF") {
     const fd = new FormData(form);
-    const val = fd.get("tf_correct"); // "true" oder "false"
+    const val = fd.get("tf_correct"); // "true" or "false"
 
     if (!val) {
       alert("Please select whether the statement is true or false.");
@@ -430,7 +476,7 @@ async function onSubmitQuestion(e) {
 }
 
 /* =========================================================
-   Prüfungen: Grund-Setup
+   Exams: basic setup
    ========================================================= */
 function setupExamView() {
   updateExamTotal();
@@ -459,7 +505,7 @@ function setupExamView() {
 
   if (examDetailBox) {
     examDetailBox.innerHTML =
-      "Select an exam below and click on „Details“ to view the questions.";
+      'Select an exam below and click on "Details" to view the questions.';
   }
 }
 
@@ -471,7 +517,7 @@ function updateExamTotal() {
 }
 
 /* =========================================================
-   Prüfungen laden
+   Exams: load
    ========================================================= */
 async function loadExams(subjectId) {
   if (!examList) return;
@@ -529,7 +575,7 @@ async function loadExams(subjectId) {
 }
 
 /* =========================================================
-   Prüfungen: Klicks in der Liste
+   Exams: list click handlers
    ========================================================= */
 async function onExamListClick(e) {
   const btn = e.target.closest("button");
@@ -554,9 +600,12 @@ async function onExamListClick(e) {
         await loadExams(examSubjectSel.value);
       }
       if (currentExamEditId === id) cancelExamEditMode();
-      if (examDetailBox && parseInt(examDetailBox.dataset.examId || "0", 10) === id) {
+      if (
+        examDetailBox &&
+        parseInt(examDetailBox.dataset.examId || "0", 10) === id
+      ) {
         examDetailBox.innerHTML =
-          "Select an exam below and click on „Details“ to view the questions.";
+          'Select an exam below and click on "Details" to view the questions.';
         examDetailBox.dataset.examId = "";
       }
     } catch (err) {
@@ -578,7 +627,7 @@ async function onExamListClick(e) {
 }
 
 /* =========================================================
-   Prüfung bearbeiten (nur Name, Fragen bleiben gleich)
+   Exams: edit / cancel / save
    ========================================================= */
 async function startExamEdit(id) {
   try {
@@ -607,7 +656,6 @@ async function startExamEdit(id) {
       examNameInput.value = exam.name || "";
     }
 
-    // Counts grob anzeigen, aber im Edit nicht ändern lassen
     let counts = { easy: 0, medium: 0, hard: 0 };
     if (Array.isArray(exam.questions)) {
       exam.questions.forEach((q) => {
@@ -682,7 +730,7 @@ function cancelExamEditMode() {
 }
 
 /* =========================================================
-   Prüfung erstellen ODER Name aktualisieren
+   Exams: create or update
    ========================================================= */
 async function createOrUpdateExam() {
   if (!examSubjectSel) {
@@ -764,7 +812,7 @@ async function createOrUpdateExam() {
 }
 
 /* =========================================================
-   Prüfungs-Details anzeigen
+   Exams: details
    ========================================================= */
 async function showExamDetails(id) {
   const detail = examDetailBox || $("#examDetail");
@@ -849,7 +897,7 @@ async function showExamDetails(id) {
 }
 
 /* =========================================================
-   UI-Utils Fragen
+   UI utils
    ========================================================= */
 function setEditMode(on) {
   const btn = saveBtn || (form && form.querySelector('button[type="submit"]'));
@@ -880,8 +928,9 @@ function statusMsg(msg) {
   list.innerHTML = `<p style="opacity:.8">${escapeHtml(msg)}</p>`;
 }
 
-
-// frontend/js/app.js
+/* =========================================================
+   Partials + navigation
+   ========================================================= */
 
 // Load an HTML partial into a placeholder element
 function loadPartial(placeholderId, url, callback) {
@@ -901,37 +950,68 @@ function loadPartial(placeholderId, url, callback) {
 
 // Navigation between "Add questions" and "Create Exams"
 function initViewNavigation() {
-  const navButtons = document.querySelectorAll("[data-view]");
-  const views = document.querySelectorAll(".view");
+  document.addEventListener("click", function (event) {
+    const btn = event.target.closest("[data-view]");
+    if (!btn) return; // click was not on a nav button
 
-  if (!navButtons.length || !views.length) return;
+    const target = btn.dataset.view; // "questions" or "exams"
 
-  navButtons.forEach((btn) => {
-    btn.addEventListener("click", function () {
-      const target = this.dataset.view; // "questions" oder "exams"
+    const navButtons = document.querySelectorAll("[data-view]");
+    const views = document.querySelectorAll(".view");
 
-      // Buttons aktiv setzen
-      navButtons.forEach((b) => b.classList.toggle("active", b === this));
+    // set active button
+    navButtons.forEach((b) => b.classList.toggle("active", b === btn));
 
-      // Views zeigen / verstecken
-      views.forEach((v) => {
-        const isTarget = v.id === "view-" + target;
-        v.classList.toggle("d-none", !isTarget);
-      });
+    // show/hide views
+    views.forEach((v) => {
+      const isTarget = v.id === "view-" + target;
+      v.classList.toggle("d-none", !isTarget);
     });
   });
 }
 
+/* =========================================================
+   Global DOMContentLoaded: load partials + init everything
+   ========================================================= */
+
+let questionsReady = false;
+let examsReady = false;
+
+function maybeInitData() {
+  // only load subjects once both views exist, so both selects can be filled
+  if (questionsReady && examsReady) {
+    loadSubjects();
+  }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
-  // Load header, then init navigation (buttons live in header)
+  // header (then nav)
   loadPartial("header-placeholder", "partials/header.html", function () {
     initViewNavigation();
   });
 
-  // Load footer
+  // footer
   loadPartial("footer-placeholder", "partials/footer.html");
 
-  // Your existing initialization (if you have any) can go here:
-  // initQuestions();
-  // initExams();
+  // questions view
+  loadPartial(
+    "view-questions-placeholder",
+    "partials/view-questions.html",
+    function () {
+      initQuestionView();
+      questionsReady = true;
+      maybeInitData();
+    }
+  );
+
+  // exams view
+  loadPartial(
+    "view-exams-placeholder",
+    "partials/view-exams.html",
+    function () {
+      initExamView();
+      examsReady = true;
+      maybeInitData();
+    }
+  );
 });
