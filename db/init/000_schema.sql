@@ -6,6 +6,25 @@ CREATE TABLE IF NOT EXISTS subjects (
 -- Beispiel-Startwerte
 INSERT IGNORE INTO subjects(name) VALUES ('Maths'), ('Computer Science'), ('Physics');
 
+-- user table + admin user
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  email VARCHAR(150) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('admin','editor','viewer') NOT NULL DEFAULT 'viewer',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO users (username, email, password_hash, role)
+VALUES (
+  'admin',
+  'admin@example.com',
+  '$2a$10$WAULII86DMP0k4LZzYjC1.3jkpTcHlhb7QEYtRy4t5QSvYBu/nxzC',
+  'admin'
+);
+
+
 
 CREATE TABLE questions (
   id INT AUTO_INCREMENT PRIMARY KEY,
