@@ -1,3 +1,5 @@
+let currentUser = null;
+
 /* =========================================================
    DOM Refs (Login)
    ========================================================= */
@@ -9,11 +11,10 @@ let loginForm, userInput, passInput, msg;
    ========================================================= */
 
 function initLoginView() {
-  loginForm = $("#loginForm");
-  userInput = $("#loginUser");
-  passInput = $("#loginPass");
-  msg = $("#loginMsg");
-  console.log("loginForm:", loginForm);
+  loginForm = document.getElementById("loginForm");
+  userInput = document.getElementById("loginUser");
+  passInput = document.getElementById("loginPass");
+  msg = document.getElementById("loginMsg");
 
   if (!loginForm) return;
 
@@ -29,8 +30,6 @@ async function onLoginSubmit(e) {
 
   const username = userInput.value.trim();
   const password = passInput.value;
-
-  console.log("onLoginSubmit fired");
 
   if (!username || !password) {
     showMsg("Please enter username and password", "error");
@@ -50,9 +49,14 @@ async function onLoginSubmit(e) {
       return;
     }
 
-    showMsg(data.message || "Login successful", "success");
+    // SAVE USER
+    currentUser = data.user;
+    sessionStorage.setItem("user", JSON.stringify(currentUser));
 
-    // go to questions view
+    // UPDATE UI
+    updateGreeting(currentUser);
+
+    // NAVIGATE TO QUESTIONS VIEW
     const btn = document.querySelector('[data-view="questions"]');
     if (btn) btn.click();
   } catch (err) {
@@ -61,7 +65,7 @@ async function onLoginSubmit(e) {
 }
 
 /* =========================================================
-   UI helper
+   UI helper (login messages)
    ========================================================= */
 
 function showMsg(text, type) {
@@ -69,4 +73,18 @@ function showMsg(text, type) {
 
   msg.textContent = text;
   msg.style.color = type === "success" ? "green" : "red";
+}
+
+/* =========================================================
+   Greeting (Hello, username)
+   ========================================================= */
+
+function updateGreeting(user) {
+  const greetBox = document.getElementById("userGreeting");
+  const nameSpan = document.getElementById("greetUsername");
+
+  if (!greetBox || !nameSpan || !user) return;
+
+  nameSpan.textContent = user.username;
+  greetBox.classList.remove("d-none");
 }

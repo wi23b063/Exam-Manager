@@ -266,3 +266,8 @@ button:active,
     width: 100%;
   }
 }
+
+.protected-view {
+  display: none;
+}
+
