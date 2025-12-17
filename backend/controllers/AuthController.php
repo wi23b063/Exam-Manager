@@ -4,8 +4,7 @@ class AuthController
 {
     public function __construct(private PDO $pdo) {}
 
-    public function login(): void
-    {
+    public function login(): void {
         $data = json_decode(file_get_contents('php://input'), true);
 
         $username = trim($data['username'] ?? '');
@@ -37,14 +36,27 @@ class AuthController
             return;
         }
 
-        // SUCCESS
+        $_SESSION['user'] = [
+            'id' => $user['id'],
+            'username' => $user['username']
+        ];
+
         echo json_encode([
             'ok' => true,
-            'message' => 'Login successful',
-            'user' => [
-                'id' => $user['id'],
-                'username' => $user['username'],
-            ],
+            'user' => $_SESSION['user']
+        ]);
+    }
+
+    public function me(): void {
+        if (!isset($_SESSION['user'])) {
+            http_response_code(401);
+            echo json_encode(['ok' => false]);
+            return;
+        }
+
+        echo json_encode([
+            'ok' => true,
+            'user' => $_SESSION['user']
         ]);
     }
 }
