@@ -8,7 +8,7 @@ class Router
         $m = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $p = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
-        // ---------------- AUTH ----------------
+        // ---------------- AUTH: login, logout, session ----------------
 
         if ($m === 'POST' && $p === '/api/login') {
             (new AuthController($this->pdo))->login();
@@ -19,6 +19,12 @@ class Router
             (new AuthController($this->pdo))->me();
             return;
         }
+
+        if ($m === 'POST' && $p === '/api/logout') {
+            (new AuthController($this->pdo))->logout();
+            return;
+        }
+
 
 
         // ---------------- SUBJECTS ----------------

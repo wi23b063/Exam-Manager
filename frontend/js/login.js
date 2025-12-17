@@ -82,9 +82,38 @@ function showMsg(text, type) {
 function updateGreeting(user) {
   const greetBox = document.getElementById("userGreeting");
   const nameSpan = document.getElementById("greetUsername");
+  const logoutBtn = document.getElementById("logoutBtn");
 
-  if (!greetBox || !nameSpan || !user) return;
+ if (!greetBox || !nameSpan || !user) return;
 
   nameSpan.textContent = user.username;
   greetBox.classList.remove("d-none");
+  logoutBtn?.classList.remove("d-none");
+}
+
+/* =========================================================
+   Logout
+   ========================================================= */
+
+async function logout() {
+  try {
+    await api("/logout", { method: "POST" });
+  } catch (e) {
+    console.warn("Logout request failed");
+  }
+
+  // Clear frontend state
+  sessionStorage.removeItem("user");
+  currentUser = null;
+
+  // Reset UI
+  const greetBox = document.getElementById("userGreeting");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  if (greetBox) greetBox.classList.add("d-none");
+  if (logoutBtn) logoutBtn.classList.add("d-none");
+
+  // Show login view
+  document.querySelectorAll(".view").forEach(v => v.classList.add("d-none"));
+  document.getElementById("view-login")?.classList.remove("d-none");
 }
