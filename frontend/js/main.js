@@ -73,6 +73,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   );
 
+  //logout
+  loadPartial("header-placeholder", "partials/header.html", function () {
+  initViewNavigation();
+
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", logout);
+  }
+  });
+
 
   // questions view
   loadPartial(

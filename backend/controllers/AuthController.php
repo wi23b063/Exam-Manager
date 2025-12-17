@@ -4,6 +4,7 @@ class AuthController
 {
     public function __construct(private PDO $pdo) {}
 
+    // log-in
     public function login(): void {
         $data = json_decode(file_get_contents('php://input'), true);
 
@@ -47,6 +48,13 @@ class AuthController
         ]);
     }
 
+    // log-out
+    public function logout(): void {
+    session_destroy();
+    echo json_encode(['ok' => true]);
+    }   
+
+    // session
     public function me(): void {
         if (!isset($_SESSION['user'])) {
             http_response_code(401);
