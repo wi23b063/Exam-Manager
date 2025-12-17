@@ -1,5 +1,4 @@
 <?php
-
 class Router
 {
     public function __construct(private PDO $pdo) {}
@@ -13,6 +12,11 @@ class Router
 
         if ($m === 'POST' && $p === '/api/login') {
             (new AuthController($this->pdo))->login();
+            return;
+        }
+
+        if ($m === 'GET' && $p === '/api/me') {
+            (new AuthController($this->pdo))->me();
             return;
         }
 

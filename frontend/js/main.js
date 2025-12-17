@@ -63,12 +63,13 @@ document.addEventListener("DOMContentLoaded", function () {
   // footer
   loadPartial("footer-placeholder", "partials/footer.html");
 
-  // login view
+  // login view + session
   loadPartial(
     "view-login-placeholder",
     "partials/login.html",
     function () {
       initLoginView();
+      restoreSession();
     }
   );
 
