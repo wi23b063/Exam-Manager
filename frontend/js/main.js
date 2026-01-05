@@ -18,13 +18,13 @@ function loadPartial(placeholderId, url, callback) {
     });
 }
 
-// Navigation between "Add questions" and "Create Exams"
+// Navigation between views
 function initViewNavigation() {
   document.addEventListener("click", function (event) {
     const btn = event.target.closest("[data-view]");
-    if (!btn) return; // click was not on a nav button
+    if (!btn) return;
 
-    const target = btn.dataset.view; // "questions" or "exams"
+    const target = btn.dataset.view; // "questions", "exams", "manual-exams"
 
     const navButtons = document.querySelectorAll("[data-view]");
     const views = document.querySelectorAll(".view");
@@ -37,6 +37,9 @@ function initViewNavigation() {
       const isTarget = v.id === "view-" + target;
       v.classList.toggle("d-none", !isTarget);
     });
+
+    // OPTIONAL: wenn man zur Manual-Exam-View geht, könnte man reload triggern
+    // (lassen wir erstmal weg, init läuft einmal beim Laden)
   });
 }
 
@@ -46,63 +49,58 @@ function initViewNavigation() {
 
 let questionsReady = false;
 let examsReady = false;
+let manualReady = false;
 
 function maybeInitData() {
-  // only load subjects once both views exist, so both selects can be filled
-  if (questionsReady && examsReady) {
-    loadSubjects();
+  // only load subjects once all views exist, so all selects can be filled
+  if (questionsReady && examsReady && manualReady) {
+    if (typeof loadSubjects === "function") {
+      loadSubjects();
+    }
   }
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  // header (then nav)
+  // header (then nav + logout)
   loadPartial("header-placeholder", "partials/header.html", function () {
     initViewNavigation();
+
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", logout);
+    }
   });
 
   // footer
   loadPartial("footer-placeholder", "partials/footer.html");
 
   // login view + session
-  loadPartial(
-    "view-login-placeholder",
-    "partials/login.html",
-    function () {
-      initLoginView();
-      restoreSession();
-    }
-  );
-
-  //logout
-  loadPartial("header-placeholder", "partials/header.html", function () {
-  initViewNavigation();
-
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", logout);
-  }
+  loadPartial("view-login-placeholder", "partials/login.html", function () {
+    initLoginView();
+    restoreSession();
   });
 
-
   // questions view
-  loadPartial(
-    "view-questions-placeholder",
-    "partials/view-questions.html",
-    function () {
-      initQuestionView();
-      questionsReady = true;
-      maybeInitData();
-    }
-  );
+  loadPartial("view-questions-placeholder", "partials/view-questions.html", function () {
+    initQuestionView();
+    questionsReady = true;
+    maybeInitData();
+  });
 
   // exams view
-  loadPartial(
-    "view-exams-placeholder",
-    "partials/view-exams.html",
-    function () {
-      initExamView();
-      examsReady = true;
-      maybeInitData();
+  loadPartial("view-exams-placeholder", "partials/view-exams.html", function () {
+    initExamView();
+    examsReady = true;
+    maybeInitData();
+  });
+
+  // NEW: manual exams view
+  loadPartial("view-manual-exams-placeholder", "partials/view-manual-exams.html", function () {
+    // init function is provided by frontend/js/manualExams.js
+    if (typeof initManualExamsView === "function") {
+      initManualExamsView();
     }
-  );
+    manualReady = true;
+    maybeInitData();
+  });
 });

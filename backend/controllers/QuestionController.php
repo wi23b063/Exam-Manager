@@ -5,6 +5,112 @@ class QuestionController
     public function __construct(private PDO $pdo) {}
 
     /* =========================================================
+       LIST FILTERED: Fragen mit Filtern + Suche + Pagination
+       GET /questions/filter?subject_id=1&difficulty=easy&type=SCQ&q=foo&limit=50&offset=0
+       ========================================================= */
+    public function listFiltered(): void
+    {
+        $subjectId  = isset($_GET['subject_id']) ? (int)$_GET['subject_id'] : 0;
+        $difficulty = isset($_GET['difficulty']) ? trim((string)$_GET['difficulty']) : '';
+        $type       = isset($_GET['type']) ? trim((string)$_GET['type']) : '';
+        $q          = isset($_GET['q']) ? trim((string)$_GET['q']) : '';
+
+        $limit  = isset($_GET['limit']) ? (int)$_GET['limit'] : 50;
+        $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+
+        // hard limits / safety
+        if ($limit <= 0) $limit = 50;
+        if ($limit > 200) $limit = 200;
+        if ($offset < 0) $offset = 0;
+
+        $where = [];
+        $params = [];
+
+        if ($subjectId > 0) {
+            $where[] = "q.subject_id = ?";
+            $params[] = $subjectId;
+        }
+
+        if ($difficulty !== '') {
+            if (!in_array($difficulty, ['easy', 'medium', 'hard'], true)) {
+                jsonOut(['error' => 'invalid difficulty'], 422);
+            }
+            $where[] = "q.difficulty = ?";
+            $params[] = $difficulty;
+        }
+
+        if ($type !== '') {
+            $allowedTypes = ['SCQ', 'MCQ', 'TF', 'SA', 'LA'];
+            if (!in_array($type, $allowedTypes, true)) {
+                jsonOut(['error' => 'invalid type'], 422);
+            }
+            $where[] = "q.type = ?";
+            $params[] = $type;
+        }
+
+        if ($q !== '') {
+            $where[] = "q.text LIKE ?";
+            $params[] = '%' . $q . '%';
+        }
+
+        $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+
+        // Achtung: LIMIT/OFFSET nicht als Parameter binden (MySQL/PDO je nach Config zickig) -> sauber gecastet einbetten
+        $sql = "
+            SELECT
+              q.id         AS q_id,
+              q.text       AS q_text,
+              q.difficulty AS q_diff,
+              q.type       AS q_type,
+              o.id         AS o_id,
+              o.idx        AS o_idx,
+              o.text       AS o_text,
+              o.is_correct AS o_correct
+            FROM questions q
+            LEFT JOIN options o ON o.question_id = q.id
+            $whereSql
+            ORDER BY q.id DESC, o.idx ASC
+            LIMIT $limit OFFSET $offset
+        ";
+
+        $st = $this->pdo->prepare($sql);
+        $st->execute($params);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+
+        $result = [];
+        foreach ($rows as $row) {
+            $qid = (int)$row['q_id'];
+
+            if (!isset($result[$qid])) {
+                $result[$qid] = [
+                    'id'         => $qid,
+                    'text'       => $row['q_text'],
+                    'difficulty' => $row['q_diff'],
+                    'type'       => $row['q_type'],
+                    'options'    => [],
+                ];
+            }
+
+            if ($row['o_id'] !== null) {
+                $result[$qid]['options'][] = [
+                    'id'         => (int)$row['o_id'],
+                    'idx'        => (int)$row['o_idx'],
+                    'text'       => $row['o_text'],
+                    'is_correct' => (int)$row['o_correct'],
+                ];
+            }
+        }
+
+        $result = array_values($result);
+
+        jsonOut([
+            'data'   => $result,
+            'limit'  => $limit,
+            'offset' => $offset
+        ]);
+    }
+
+    /* =========================================================
        LIST: alle Fragen eines Faches (ohne JSON_ARRAYAGG)
        GET /questions?subject_id=1
        ========================================================= */
