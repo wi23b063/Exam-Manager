@@ -7,7 +7,7 @@
         <div class="brand-title">Exam Manager</div>
         <div class="brand-subtitle">Question &amp; Exam Management</div>
       </div>
-  </div>
+    </div>
 
     <nav class="main-nav">
       <div id="userGreeting" class="user-greeting d-none">
@@ -15,13 +15,21 @@
       </div>
 
       <button id="logoutBtn" class="nav-btn d-none" type="button">
-      Logout
+        Logout
       </button>
+
       <button class="nav-btn active" type="button" data-view="questions">
         Add questions
       </button>
+
       <button class="nav-btn" type="button" data-view="exams">
         Create Exams
+      </button>
+
+      <!-- NEU: Manuelle Prüfung (Filter + Fragen auswählen) -->
+      <button class="nav-btn" type="button" data-view="manual-exams">
+        Manual Exam
+      </button>
     </nav>
   </div>
 </header>

@@ -1,4 +1,5 @@
 <?php
+
 class Router
 {
     public function __construct(private PDO $pdo) {}
@@ -25,8 +26,6 @@ class Router
             return;
         }
 
-
-
         // ---------------- SUBJECTS ----------------
 
         if ($m === 'GET' && $p === '/api/subjects') {
@@ -39,7 +38,16 @@ class Router
             return;
         }
 
+        // ---------------- QUESTIONS (Filtered) ----------------
+        // GET /api/questions/filter?subject_id=...&difficulty=...&type=...&q=...&limit=...&offset=...
+
+        if ($m === 'GET' && $p === '/api/questions/filter') {
+            (new QuestionController($this->pdo))->listFiltered();
+            return;
+        }
+
         // ---------------- QUESTIONS (Collection) ----------------
+        // GET /api/questions?subject_id=...
 
         if ($m === 'GET' && $p === '/api/questions') {
             (new QuestionController($this->pdo))->list();

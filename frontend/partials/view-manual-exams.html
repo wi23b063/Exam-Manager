@@ -1,0 +1,139 @@
+<!-- frontend/partials/view-manual-exams.html -->
+
+<section id="view-manual-exams" class="view d-none">
+
+  <!-- Manual Exam hinzufügen -->
+  <section class="card p-3">
+    <h2>Manual Exam Builder</h2>
+
+    <form id="manualExamForm">
+
+      <!-- Subject -->
+      <label for="meSubject">Subject</label>
+      <select id="meSubject" class="form-select mb-2"></select>
+
+      <!-- Exam Name -->
+      <label for="meExamName" class="mt-2">Exam Name</label>
+      <input
+        type="text"
+        id="meExamName"
+        class="form-control"
+        placeholder="z.B. CS Manual Exam"
+      />
+
+      <!-- Filter -->
+      <h3 class="h6 mt-3">Filter Questions</h3>
+
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label for="meDifficulty" class="form-label">Difficulty</label>
+          <select id="meDifficulty" class="form-select">
+            <option value="">All</option>
+            <option value="easy">easy</option>
+            <option value="medium">medium</option>
+            <option value="hard">hard</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label for="meType" class="form-label">Type</label>
+          <select id="meType" class="form-select">
+            <option value="">All</option>
+            <option value="SCQ">SCQ</option>
+            <option value="MCQ">MCQ</option>
+            <option value="TF">TF</option>
+            <option value="SA">SA</option>
+            <option value="LA">LA</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label for="meSearch" class="form-label">Search</label>
+          <input
+            id="meSearch"
+            class="form-control"
+            placeholder="Search question text..."
+          />
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="mt-3 d-flex align-items-center flex-wrap gap-2">
+        <button
+          id="meApplyFilters"
+          type="button"
+          class="btn btn-success mt-2"
+        >
+          Apply filters
+        </button>
+
+        <button
+          id="meResetFilters"
+          type="button"
+          class="btn btn-outline-secondary mt-2"
+        >
+          Reset
+        </button>
+
+        <button
+          id="mePrev"
+          type="button"
+          class="btn btn-outline-secondary mt-2"
+        >
+          Prev
+        </button>
+
+        <button
+          id="meNext"
+          type="button"
+          class="btn btn-outline-secondary mt-2"
+        >
+          Next
+        </button>
+
+        <small id="meInfo" class="text-muted mt-2"></small>
+      </div>
+
+      <hr class="my-4" />
+
+      <!-- Available questions -->
+      <section class="card p-3 mt-4">
+        <h3 class="h6 mb-3">Available Questions</h3>
+        <div id="meQuestionList" class="small"></div>
+      </section>
+
+      <hr class="my-4" />
+
+      <!-- Selected questions -->
+      <section class="card p-3 mt-4">
+        <h3 class="h6 mb-3">Selected Questions</h3>
+
+        <div id="meSelectedList" class="small text-muted">
+          No selected questions.
+        </div>
+
+        <div class="mt-3 d-flex align-items-center flex-wrap gap-2">
+          <button
+            id="meClearSelected"
+            type="button"
+            class="btn btn-outline-danger mt-2"
+          >
+            Clear
+          </button>
+
+          <button
+            id="meCreateExam"
+            type="button"
+            class="btn btn-success mt-2"
+          >
+            Create manual exam
+          </button>
+
+          <small id="meCreateMsg" class="text-muted mt-2"></small>
+        </div>
+      </section>
+
+    </form>
+  </section>
+
+</section>
