@@ -21,9 +21,9 @@ class ExamController
             WHERE subject_id = ?
             ORDER BY created_at DESC
         ");
+    
         $st->execute([$subjectId]);
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
-
         jsonOut($rows);
     }
 
@@ -95,6 +95,89 @@ class ExamController
 
         jsonOut($exam);
     }
+
+    /**
+ * DUPLICATE
+ * POST /api/exams/{id}/duplicate
+ */
+public function duplicate(int $id): void
+{
+    if ($id <= 0) {
+        jsonOut(['error' => 'invalid id'], 400);
+    }
+
+    // Exam laden
+    $stExam = $this->pdo->prepare("
+        SELECT id, subject_id, name, mode, base_difficulty, question_count
+        FROM exams
+        WHERE id = ?
+    ");
+    $stExam->execute([$id]);
+    $exam = $stExam->fetch(PDO::FETCH_ASSOC);
+
+    if (!$exam) {
+        jsonOut(['error' => 'not found'], 404);
+    }
+
+    // Fragen-Verknüpfungen laden (inkl Position)
+    $stLinks = $this->pdo->prepare("
+        SELECT question_id, position
+        FROM exam_questions
+        WHERE exam_id = ?
+        ORDER BY position ASC
+    ");
+    $stLinks->execute([$id]);
+    $links = $stLinks->fetchAll(PDO::FETCH_ASSOC);
+
+    $newName = ($exam['name'] ?? '') . '_Copy';
+
+    try {
+        $this->pdo->beginTransaction();
+
+        // Neues Exam anlegen (Metadaten übernehmen)
+        $insExam = $this->pdo->prepare("
+            INSERT INTO exams (subject_id, name, mode, base_difficulty, question_count)
+            VALUES (?,?,?,?,?)
+        ");
+        $insExam->execute([
+            (int)$exam['subject_id'],
+            $newName,
+            $exam['mode'],                // übernommen
+            $exam['base_difficulty'],     // übernommen (kann null sein)
+            (int)$exam['question_count'], // oder count($links)
+        ]);
+
+        $newExamId = (int)$this->pdo->lastInsertId();
+
+        // exam_questions kopieren
+        if (!empty($links)) {
+            $insLink = $this->pdo->prepare("
+                INSERT INTO exam_questions (exam_id, question_id, position)
+                VALUES (?,?,?)
+            ");
+
+            foreach ($links as $row) {
+                $insLink->execute([
+                    $newExamId,
+                    (int)$row['question_id'],
+                    (int)$row['position'],
+                ]);
+            }
+        }
+
+        $this->pdo->commit();
+
+        jsonOut([
+            'id' => $newExamId,
+            'name' => $newName,
+        ], 201);
+
+    } catch (Throwable $e) {
+        $this->pdo->rollBack();
+        error_log($e);
+        jsonOut(['error' => 'internal error'], 500);
+    }
+}
 
     /**
      * MANUELL: Prüfungsfragen werden explizit übergeben

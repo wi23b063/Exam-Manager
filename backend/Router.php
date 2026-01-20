@@ -105,7 +105,14 @@ class Router
             (new ExamController($this->pdo))->createManual();
             return;
         }
+        // ---------------- EXAMS (Duplicate) ----------------
+        // POST /api/exams/{id}/duplicate
 
+        if ($m === 'POST' && preg_match('#^/api/exams/(\d+)/duplicate$#', $p, $matches)) {
+            $id = (int)$matches[1];
+            (new ExamController($this->pdo))->duplicate($id);
+            return;
+        }   
         // ---------------- EXAMS (Single /api/exams/{id}) ----------------
 
         if (preg_match('#^/api/exams/(\d+)$#', $p, $matches)) {

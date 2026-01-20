@@ -149,6 +149,9 @@
                  <button type="button" class="btn btn-sm btn-outline-primary mx-details">
                    Details
                  </button>
+                <button type="button" class="btn btn-sm btn-outline-primary exam-dup ms-1">
+                  Duplicate
+                </button>
                  <button type="button" class="btn btn-sm btn-outline-danger mx-del">
                    Delete
                  </button>
@@ -202,6 +205,11 @@
             await showManageExamDetails(id);
             return;
           }
+
+          if (btn.classList.contains("exam-dup")) {
+            await duplicateManageExam(id);
+            return;
+          }
         }
       
         // Reorder / remove inside detail question rows
@@ -225,7 +233,47 @@
         }
       }
       
-   
+
+    /* =========================================================
+   Duplicate exam
+   ========================================================= */
+async function duplicateManageExam(id) {
+  if (!mxSubjectSel || !mxSubjectSel.value) {
+    alert("No subject selected.");
+    return;
+  }
+
+  if (!confirm("Duplicate this exam?")) return;
+
+  try {
+    const res = await api(`/exams/${id}/duplicate`, { method: "POST" });
+
+    const txt = await safeText(res);
+    let data = {};
+    try {
+      data = txt ? JSON.parse(txt) : {};
+    } catch {}
+
+    if (!res.ok) {
+      console.error("Duplicate exam failed:", txt);
+      alert("Failed to duplicate exam: " + (data.error || res.status));
+      return;
+    }
+
+    alert(`Exam duplicated: ${data.name || "Copy"} (ID: ${data.id || "?"})`);
+
+    // Reload list
+    await loadManageExams(mxSubjectSel.value);
+
+    // Optional: open the copy directly
+    if (data.id) {
+      await showManageExamDetails(data.id);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Network error while duplicating the exam.");
+  }
+}
    /* =========================================================
       Details
       ========================================================= */
