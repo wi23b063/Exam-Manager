@@ -84,6 +84,7 @@ h1, h2 {
 /* Navigation im Header */
 .main-nav {
   display: flex;
+  align-items: center;
   gap: 0.75rem;
 }
 

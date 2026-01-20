@@ -136,6 +136,9 @@ async function loadExams(subjectId) {
               <button type="button" class="btn btn-sm btn-outline-secondary exam-edit ms-1">
                 Edit
               </button>
+             <button type="button" class="btn btn-sm btn-outline-success exam-dup ms-1">
+                Duplicate
+              </button>
               <button type="button" class="btn btn-sm btn-outline-danger exam-del ms-1">
                 Delete
               </button>
@@ -161,9 +164,17 @@ async function onExamListClick(e) {
 
   const card = btn.closest(".exam-card");
   if (!card) return;
+
   const id = parseInt(card.dataset.id || "0", 10);
   if (!id) return;
 
+  // ✅ DUPLICATE muss hier stehen
+  if (btn.classList.contains("exam-dup")) {
+    await duplicateExam(id);
+    return;
+  }
+
+  // DELETE
   if (btn.classList.contains("exam-del")) {
     if (!confirm("Really delete exam?")) return;
     try {
@@ -174,10 +185,12 @@ async function onExamListClick(e) {
         alert("Failed to delete exam.");
         return;
       }
+
       if (examSubjectSel && examSubjectSel.value) {
         await loadExams(examSubjectSel.value);
       }
       if (currentExamEditId === id) cancelExamEditMode();
+
       if (
         examDetailBox &&
         parseInt(examDetailBox.dataset.examId || "0", 10) === id
@@ -193,11 +206,13 @@ async function onExamListClick(e) {
     return;
   }
 
+  // EDIT
   if (btn.classList.contains("exam-edit")) {
     await startExamEdit(id);
     return;
   }
 
+  // DETAILS
   if (btn.classList.contains("exam-details")) {
     await showExamDetails(id);
     return;
@@ -389,6 +404,46 @@ async function createOrUpdateExam() {
   }
 }
 
+async function duplicateExam(id) {
+
+
+  
+if (!examSubjectSel || !examSubjectSel.value) {
+    alert("No subject selected.");
+    return;
+  }
+
+  if (!confirm("Duplicate this exam?")) return;
+
+  try {
+    const res = await api(`/exams/${id}/duplicate`, { method: "POST" });
+
+    const txt = await safeText(res);
+    let data = {};
+    try {
+      data = txt ? JSON.parse(txt) : {};
+    } catch {}
+
+    if (!res.ok) {
+      console.error("duplicate exam failed:", txt);
+      alert("Failed to duplicate exam: " + (data.error || res.status));
+      return;
+    }
+
+    alert(`Exam duplicated: ${data.name || "Copy"} (ID: ${data.id || "?"})`);
+
+    // Reload list
+    await loadExams(examSubjectSel.value);
+
+    // Optional: direkt Details der Kopie anzeigen
+    if (data.id) {
+      await showExamDetails(data.id);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Network error while duplicating the exam.");
+  }
+}
 /* =========================================================
    Exams: details
    ========================================================= */
