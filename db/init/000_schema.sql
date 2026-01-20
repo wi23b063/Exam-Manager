@@ -138,7 +138,7 @@ INSERT INTO options (question_id, idx, text, is_correct) VALUES
 -- Q4: Computer Science, Short Answer, easy
 INSERT INTO questions (subject_id, type, text, difficulty)
 VALUES (@cs_id, 'SA',
-        'Fill in the blank: The keyword used to define a function in Python is ___.',
+        'Fill in the blank: The keyword used to define a function in Python is _.',
         'easy');
 SET @q4_id = LAST_INSERT_ID();
 
@@ -174,7 +174,172 @@ INSERT INTO options (question_id, idx, text, is_correct) VALUES
   (@q6_id, 2, 'Kepler''s first law', 0),
   (@q6_id, 3, 'Ohm''s law', 0);
 
+/* =========================================================
+   ADDITIONAL QUESTIONS (5 per subject)
+   ========================================================= */
 
+-- =========================
+-- MATHS (5)
+-- =========================
+
+-- M1: Maths, TF, easy
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@maths_id, 'TF', 'A prime number has exactly two positive divisors: 1 and itself.', 'easy');
+SET @m1_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@m1_id, 0, 'True', 1),
+  (@m1_id, 1, 'False', 0);
+
+-- M2: Maths, SCQ, easy
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@maths_id, 'SCQ', 'What is the value of 7 × 6?', 'easy');
+SET @m2_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@m2_id, 0, '36', 0),
+  (@m2_id, 1, '42', 1),
+  (@m2_id, 2, '46', 0),
+  (@m2_id, 3, '48', 0);
+
+-- M3: Maths, MCQ, medium
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@maths_id, 'MCQ', 'Which of the following numbers are multiples of 3?', 'medium');
+SET @m3_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@m3_id, 0, '12', 1),
+  (@m3_id, 1, '14', 0),
+  (@m3_id, 2, '21', 1),
+  (@m3_id, 3, '25', 0);
+
+-- M4: Maths, SA, medium
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@maths_id, 'SA', 'Solve for x: 3x + 5 = 20. What is x?', 'medium');
+SET @m4_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@m4_id, 0, '5', 1);
+
+-- M5: Maths, LA, hard
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@maths_id, 'LA', 'Explain what a derivative represents in calculus and compute the derivative of f(x)=x^2.', 'hard');
+SET @m5_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@m5_id, 0,
+   'A derivative represents the instantaneous rate of change (slope of the tangent line) of a function. '
+   'For f(x)=x^2, f''(x)=2x.',
+   1);
+
+
+-- =========================
+-- COMPUTER SCIENCE (5)
+-- =========================
+
+-- CS1: CS, TF, easy
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@cs_id, 'TF', 'In most programming languages, an array/list index typically starts at 0.', 'easy');
+SET @cs1_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@cs1_id, 0, 'True', 1),
+  (@cs1_id, 1, 'False', 0);
+
+-- CS2: CS, SCQ, easy
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@cs_id, 'SCQ', 'Which data structure works on a First-In, First-Out (FIFO) principle?', 'easy');
+SET @cs2_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@cs2_id, 0, 'Stack', 0),
+  (@cs2_id, 1, 'Queue', 1),
+  (@cs2_id, 2, 'Tree', 0),
+  (@cs2_id, 3, 'Graph', 0);
+
+-- CS3: CS, MCQ, medium
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@cs_id, 'MCQ', 'Which of the following are valid HTTP methods?', 'medium');
+SET @cs3_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@cs3_id, 0, 'GET', 1),
+  (@cs3_id, 1, 'POST', 1),
+  (@cs3_id, 2, 'FETCH', 0),
+  (@cs3_id, 3, 'DELETE', 1);
+
+-- CS4: CS, SA, medium
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@cs_id, 'SA', 'What is the time complexity (Big-O) of binary search on a sorted array?', 'medium');
+SET @cs4_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@cs4_id, 0, 'O(log n)', 1);
+
+-- CS5: CS, LA, hard
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@cs_id, 'LA', 'Explain the difference between a process and a thread, and give one advantage of multithreading.', 'hard');
+SET @cs5_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@cs5_id, 0,
+   'A process is an independent program instance with its own address space, while threads are lightweight execution units within a process that share memory. '
+   'An advantage of multithreading is improved responsiveness or better CPU utilization for parallelizable tasks.',
+   1);
+
+
+-- =========================
+-- PHYSICS (5)
+-- =========================
+
+-- P1: Physics, TF, easy
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@physics_id, 'TF', 'Energy cannot be created or destroyed, only transformed from one form to another.', 'easy');
+SET @p1_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@p1_id, 0, 'True', 1),
+  (@p1_id, 1, 'False', 0);
+
+-- P2: Physics, SCQ, easy
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@physics_id, 'SCQ', 'What is the SI unit of force?', 'easy');
+SET @p2_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@p2_id, 0, 'Joule (J)', 0),
+  (@p2_id, 1, 'Watt (W)', 0),
+  (@p2_id, 2, 'Newton (N)', 1),
+  (@p2_id, 3, 'Pascal (Pa)', 0);
+
+-- P3: Physics, MCQ, medium
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@physics_id, 'MCQ', 'Which of the following are scalar quantities?', 'medium');
+SET @p3_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@p3_id, 0, 'Speed', 1),
+  (@p3_id, 1, 'Velocity', 0),
+  (@p3_id, 2, 'Temperature', 1),
+  (@p3_id, 3, 'Force', 0);
+
+-- P4: Physics, SA, medium
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@physics_id, 'SA', 'A car travels 150 km in 3 hours. What is its average speed in km/h?', 'medium');
+SET @p4_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@p4_id, 0, '50', 1);
+
+-- P5: Physics, LA, hard
+INSERT INTO questions (subject_id, type, text, difficulty)
+VALUES (@physics_id, 'LA', 'State Ohm''s law and calculate the current through a 10 Ω resistor when 5 V is applied.', 'hard');
+SET @p5_id = LAST_INSERT_ID();
+
+INSERT INTO options (question_id, idx, text, is_correct) VALUES
+  (@p5_id, 0,
+   'Ohm''s law states V = I·R. With V=5 V and R=10 Ω, I = V/R = 5/10 = 0.5 A.',
+   1);
 
 /* =========================================================
    EXAMS

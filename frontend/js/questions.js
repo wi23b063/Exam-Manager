@@ -99,6 +99,18 @@ async function loadSubjects() {
     subjectSel.innerHTML = optionsHtml;
     if (examSubjectSel) examSubjectSel.innerHTML = optionsHtml;
 
+    // NEW: Manage Exams subject select
+    const mxSel = document.getElementById("mxSubject");
+    if (mxSel) {
+      mxSel.innerHTML = optionsHtml;
+      if (!mxSel.value) mxSel.value = subjects[0].id;
+
+      if (typeof loadManageExams === "function") {
+        loadManageExams(mxSel.value);
+      }
+    }
+
+
     if (subjects.length === 0) {
       if (list)
         list.innerHTML =

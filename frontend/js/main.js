@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
     maybeInitData();
   });
 
-  // NEW: manual exams view
+  //  manual exams view
   loadPartial("view-manual-exams-placeholder", "partials/view-manual-exams.html", function () {
     // init function is provided by frontend/js/manualExams.js
     if (typeof initManualExamsView === "function") {
@@ -103,4 +103,12 @@ document.addEventListener("DOMContentLoaded", function () {
     manualReady = true;
     maybeInitData();
   });
+
+  // manual exams view
+  loadPartial("view-manage-exams-placeholder", "partials/view-manage-exams.html", function () {
+    if (typeof initManageExamsView === "function") {
+      initManageExamsView();
+    }
+  });
+  
 });
