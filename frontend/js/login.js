@@ -49,16 +49,29 @@ async function onLoginSubmit(e) {
       return;
     }
 
-    // SAVE USER
-    currentUser = data.user;
-    sessionStorage.setItem("user", JSON.stringify(currentUser));
+  // SAVE USER
+  currentUser = data.user;
+  sessionStorage.setItem("user", JSON.stringify(currentUser));
 
-    // UPDATE UI
-    updateGreeting(currentUser);
+  // UPDATE UI
+  updateGreeting(currentUser);
 
-    // NAVIGATE TO QUESTIONS VIEW
-    const btn = document.querySelector('[data-view="questions"]');
-    if (btn) btn.click();
+  // SHOW HEADER + APP
+  const header = document.querySelector(".topbar");
+  if (header) header.classList.remove("d-none");
+
+  const appRoot = document.getElementById("app-root");
+  if (appRoot) appRoot.classList.remove("d-none");
+
+  const footer = document.getElementById("footer-placeholder");
+  if (footer) footer.classList.remove("d-none");
+
+  // HIDE LOGIN
+  document.getElementById("view-login-placeholder")?.classList.add("d-none");
+
+  // NAVIGATE TO QUESTIONS VIEW
+  const btn = document.querySelector('[data-view="questions"]');
+  if (btn) btn.click();
   } catch (err) {
     showMsg("Server error", "error");
   }
@@ -106,14 +119,30 @@ async function logout() {
   sessionStorage.removeItem("user");
   currentUser = null;
 
-  // Reset UI
+  // Hide header, app, footer
+  document.querySelector(".topbar")?.classList.add("d-none");
+  document.getElementById("app-root")?.classList.add("d-none");
+  document.getElementById("footer-placeholder")?.classList.add("d-none");
+
+  // Reset greeting & logout button
   const greetBox = document.getElementById("userGreeting");
   const logoutBtn = document.getElementById("logoutBtn");
-
   if (greetBox) greetBox.classList.add("d-none");
   if (logoutBtn) logoutBtn.classList.add("d-none");
 
   // Show login view
-  document.querySelectorAll(".view").forEach(v => v.classList.add("d-none"));
-  document.getElementById("view-login")?.classList.remove("d-none");
+  document.getElementById("view-login-placeholder")?.classList.remove("d-none");
+  const loginView = document.getElementById("view-login-placeholder");
+  console.log("loginView display:", window.getComputedStyle(loginView).display);
+
+
+  // Re-initialize login form
+  initLoginView();
+
+console.log("Logging out...");
+console.log("Header:", document.querySelector(".topbar"));
+console.log("App Root:", document.getElementById("app-root"));
+console.log("Footer:", document.getElementById("footer-placeholder"));
+console.log("Login view:", document.getElementById("view-login-placeholder"));
+
 }
