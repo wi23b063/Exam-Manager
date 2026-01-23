@@ -8,6 +8,7 @@ require __DIR__ . '/../controllers/SubjectController.php';
 require __DIR__ . '/../controllers/QuestionController.php';
 require __DIR__ . '/../controllers/ExamController.php'; 
 require __DIR__ . '/../controllers/UserController.php'; 
+require __DIR__ . '/../helpers/helpers.php';
 
 $router = new Router($pdo);
 $router->dispatch();

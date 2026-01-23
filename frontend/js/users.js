@@ -2,8 +2,7 @@
    Manage Users View
    ========================================================= */
 
-let users = []; // in-memory user list
-let editIndex = null; // index of user being edited
+let editUserId = null; // ID of the user being edited
 
 function initManageUsersView() {
   const userForm = document.getElementById("userForm");
@@ -18,20 +17,42 @@ function initManageUsersView() {
   const userFormMsg = document.getElementById("userFormMsg");
   const userListDiv = document.getElementById("userList");
 
+  userRole.innerHTML = `
+    <option value="">Select role</option>
+    <option value="admin">Admin</option>
+    <option value="user">User</option>
+  `;
+
+  // ----------------------
+  // Load users from backend
+  // ----------------------
+  async function fetchUsers() {
+    try {
+      const res = await fetch("/api/users"); // adjust endpoint
+      const data = await res.json();
+      renderUsers(data);
+    } catch (err) {
+      userListDiv.innerHTML = `<em>Error loading users.</em>`;
+      console.error(err);
+    }
+  }
+
+  // ----------------------
   // Render users list
-  function renderUsers() {
-    if (users.length === 0) {
+  // ----------------------
+  function renderUsers(users) {
+    if (!users || users.length === 0) {
       userListDiv.innerHTML = "<em>No users available.</em>";
       return;
     }
 
     userListDiv.innerHTML = "";
-    users.forEach((user, index) => {
+    users.forEach((user) => {
       const div = document.createElement("div");
       div.className = "d-flex justify-content-between align-items-center mb-1 p-1 border rounded";
       div.innerHTML = `
         <div>
-          <strong>${user.name}</strong> (${user.email}) - <em>${user.role}</em>
+          <strong>${user.username}</strong> (${user.email}) - <em>${user.role}</em>
         </div>
         <div class="d-flex gap-2">
           <button class="btn btn-sm btn-primary btn-edit">Edit</button>
@@ -39,23 +60,30 @@ function initManageUsersView() {
         </div>
       `;
 
-      // Edit button
+      // Edit
       div.querySelector(".btn-edit").addEventListener("click", () => {
-        userName.value = user.name;
+        userName.value = user.username;
         userEmail.value = user.email;
         userRole.value = user.role;
-        editIndex = index;
+        editUserId = user.id;
+
         addUserBtn.disabled = true;
         updateUserBtn.disabled = false;
         userFormMsg.textContent = "Editing user...";
       });
 
-      // Delete button
-      div.querySelector(".btn-delete").addEventListener("click", () => {
-        if (confirm(`Delete user "${user.name}"?`)) {
-          users.splice(index, 1);
-          renderUsers();
+      // Delete
+      div.querySelector(".btn-delete").addEventListener("click", async () => {
+        if (!confirm(`Delete user "${user.username}"?`)) return;
+
+        try {
+          const res = await fetch(`/api/users/${user.id}`, { method: "DELETE" });
+          if (!res.ok) throw new Error("Failed to delete");
+          fetchUsers();
           resetForm();
+        } catch (err) {
+          userFormMsg.textContent = "Error deleting user.";
+          console.error(err);
         }
       });
 
@@ -63,73 +91,94 @@ function initManageUsersView() {
     });
   }
 
+  // ----------------------
   // Reset form
+  // ----------------------
   function resetForm() {
     userName.value = "";
     userEmail.value = "";
     userRole.value = "";
-    editIndex = null;
+    editUserId = null;
+
     addUserBtn.disabled = false;
     updateUserBtn.disabled = true;
     userFormMsg.textContent = "";
   }
 
+  // ----------------------
   // Add user
-  addUserBtn.addEventListener("click", () => {
-    const name = userName.value.trim();
+  // ----------------------
+  addUserBtn.addEventListener("click", async () => {
+    const username = userName.value.trim();
     const email = userEmail.value.trim();
     const role = userRole.value;
+    const password = prompt("Enter a password for this user:")?.trim();
 
-    if (!name || !email || !role) {
-      userFormMsg.textContent = "Please fill all fields.";
+    if (!username || !email || !role || !password) {
+      userFormMsg.textContent = "All fields and password are required.";
       return;
     }
 
-    users.push({ name, email, role });
-    renderUsers();
-    resetForm();
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, role, password }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to create user");
+      }
+
+      fetchUsers();
+      resetForm();
+      userFormMsg.textContent = "User created successfully!";
+    } catch (err) {
+      userFormMsg.textContent = err.message;
+      console.error(err);
+    }
   });
 
+  // ----------------------
   // Update user
-  updateUserBtn.addEventListener("click", () => {
-    if (editIndex === null) return;
+  // ----------------------
+  updateUserBtn.addEventListener("click", async () => {
+    if (!editUserId) return;
 
-    const name = userName.value.trim();
+    const username = userName.value.trim();
     const email = userEmail.value.trim();
     const role = userRole.value;
 
-    if (!name || !email || !role) {
-      userFormMsg.textContent = "Please fill all fields.";
+    if (!username || !email || !role) {
+      userFormMsg.textContent = "All fields are required.";
       return;
     }
 
-    users[editIndex] = { name, email, role };
-    renderUsers();
-    resetForm();
+    try {
+      const res = await fetch(`/api/users/${editUserId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, role }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to update user");
+      }
+
+      fetchUsers();
+      resetForm();
+      userFormMsg.textContent = "User updated successfully!";
+    } catch (err) {
+      userFormMsg.textContent = err.message;
+      console.error(err);
+    }
   });
 
   // Reset form button
   resetUserFormBtn.addEventListener("click", resetForm);
 
-  // Initial render
-  renderUsers();
+  // Initial load
+  fetchUsers();
 }
-
-document.addEventListener("click", function (event) {
-  const btn = event.target.closest("[data-view]");
-  if (!btn) return;
-
-  const target = btn.dataset.view; // e.g., "manage-users"
-  const views = document.querySelectorAll(".view");
-
-  views.forEach((v) => {
-    const isTarget = v.id === "view-" + target;
-    v.classList.toggle("d-none", !isTarget);
-
-    // Only initialize when showing
-    if (isTarget && target === "manage-users" && typeof initManageUsersView === "function") {
-      initManageUsersView();
-    }
-  });
-});
-

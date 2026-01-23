@@ -139,6 +139,67 @@ class Router
             echo json_encode(['error' => 'method not allowed']);
             return;
         }
+    
+        // ---------------- USERS ----------------
+
+    // GET /api/users            -> list all users
+    if ($m === 'GET' && $p === '/api/users') {
+        requireAdmin(); // only admins can see users
+        $stmt = $this->pdo->query("SELECT id, username, email, role FROM users ORDER BY id ASC");
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        header('Content-Type: application/json');
+        echo json_encode($users);
+        return;
+    }
+
+    // POST /api/users           -> create new user
+    if ($m === 'POST' && $p === '/api/users') {
+        (new UserController($this->pdo))->create();
+        return;
+    }
+
+    // PUT /api/users/{id}       -> update username/email/role
+    if ($m === 'PUT' && preg_match('#^/api/users/(\d+)$#', $p, $matches)) {
+        requireAdmin();
+        $id = (int)$matches[1];
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        $username = trim($data['username'] ?? '');
+        $email    = trim($data['email'] ?? '');
+        $role     = $data['role'] ?? 'user';
+
+        if (!$username || !$email || !$role) {
+            http_response_code(400);
+            echo json_encode(['message'=>'Missing fields']);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare("UPDATE users SET username=?, email=?, role=? WHERE id=?");
+        try {
+            $stmt->execute([$username, $email, $role, $id]);
+            echo json_encode(['ok'=>true]);
+        } catch (PDOException $e) {
+            http_response_code(409);
+            echo json_encode(['message'=>'Error updating user']);
+        }
+        return;
+    }
+
+    // DELETE /api/users/{id}    -> delete user
+    if ($m === 'DELETE' && preg_match('#^/api/users/(\d+)$#', $p, $matches)) {
+        requireAdmin();
+        $id = (int)$matches[1];
+        $stmt = $this->pdo->prepare("DELETE FROM users WHERE id=?");
+        try {
+            $stmt->execute([$id]);
+            echo json_encode(['ok'=>true]);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['message'=>'Error deleting user']);
+        }
+        return;
+    }
+
 
         // ---------------- FALLBACK: 404 ----------------
 
