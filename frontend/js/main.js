@@ -80,6 +80,15 @@ document.addEventListener("DOMContentLoaded", function () {
     restoreSession();
   });
 
+
+  loadPartial("view-manage-users-placeholder", "partials/view-manage-users.html", function () {
+    if (typeof initManageUsersView === "function") {
+      initManageUsersView();
+    }
+  });
+
+
+
   // questions view
   loadPartial("view-questions-placeholder", "partials/view-questions.html", function () {
     initQuestionView();

@@ -10,6 +10,7 @@ class AuthController
 
         $username = trim($data['username'] ?? '');
         $password = $data['password'] ?? '';
+        $role = $data['role'] ?? 'viewer';
 
         if ($username === '' || $password === '') {
             http_response_code(400);
@@ -21,7 +22,7 @@ class AuthController
         }
 
         $stmt = $this->pdo->prepare(
-            'SELECT id, username, password_hash
+            'SELECT id, username, password_hash, role
              FROM users
              WHERE username = ?'
         );
@@ -39,7 +40,8 @@ class AuthController
 
         $_SESSION['user'] = [
             'id' => $user['id'],
-            'username' => $user['username']
+            'username' => $user['username'],
+            'role' => $user['role']
         ];
 
         echo json_encode([
