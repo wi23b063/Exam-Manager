@@ -20,7 +20,7 @@ function initManageUsersView() {
   userRole.innerHTML = `
     <option value="">Select role</option>
     <option value="admin">Admin</option>
-    <option value="user">User</option>
+    <option value="editor">Editor</option>
   `;
 
   // ----------------------
