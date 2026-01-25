@@ -27,7 +27,7 @@ function initViewNavigation() {
     const target = btn.dataset.view; // "questions", "exams", "manual-exams"
 
     const navButtons = document.querySelectorAll("[data-view]");
-    const views = document.querySelectorAll(".view");
+    const views = document.querySelectorAll("#app-root .view");
 
     // set active button
     navButtons.forEach((b) => b.classList.toggle("active", b === btn));
