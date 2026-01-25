@@ -30,7 +30,7 @@ class UserController {
             $stmt->execute([$username, $email, $hash, $role]);
         } catch (PDOException $e) {
             http_response_code(409);
-            echo json_encode(['message' => 'User already exists']);
+            echo json_encode(['message' => 'User already exists', 'error' => $e->getMessage()]);
             return;
         }
 

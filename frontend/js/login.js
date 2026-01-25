@@ -68,6 +68,7 @@ async function onLoginSubmit(e) {
 
   // HIDE LOGIN
   document.getElementById("view-login-placeholder")?.classList.add("d-none");
+  document.getElementById("view-login")?.classList.remove("d-none");
 
   // NAVIGATE TO QUESTIONS VIEW
   const btn = document.querySelector('[data-view="questions"]');
