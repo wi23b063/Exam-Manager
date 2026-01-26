@@ -1,22 +1,27 @@
 <?php
-class UserController {
+class UserController
+{
     public function __construct(private PDO $pdo) {}
 
+    // POST /api/users
     public function create(): void
     {
         requireAdmin();
 
-        $data = json_decode(file_get_contents('php://input'), true);
+        $data = body();
 
         $username = trim($data['username'] ?? '');
-        $email = trim($data['email'] ?? '');
+        $email    = trim($data['email'] ?? '');
         $password = $data['password'] ?? '';
-        $role = $data['role'] ?? 'viewer';
+        $role     = $data['role'] ?? 'viewer';
 
-        if (!$username || !$email || !$password) {
-            http_response_code(400);
-            echo json_encode(['message' => 'Missing fields']);
-            return;
+        if ($username === '' || $email === '' || $password === '') {
+            jsonOut(['ok' => false, 'message' => 'Missing fields'], 400);
+        }
+
+        // Rollen validieren
+        if (!in_array($role, ['admin', 'editor', 'viewer'], true)) {
+            jsonOut(['ok' => false, 'message' => 'Invalid role'], 422);
         }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -29,11 +34,10 @@ class UserController {
         try {
             $stmt->execute([$username, $email, $hash, $role]);
         } catch (PDOException $e) {
-            http_response_code(409);
-            echo json_encode(['message' => 'User already exists', 'error' => $e->getMessage()]);
-            return;
+            // UNIQUE constraint -> username/email existiert
+            jsonOut(['ok' => false, 'message' => 'User already exists'], 409);
         }
 
-        echo json_encode(['ok' => true]);
+        jsonOut(['ok' => true], 201);
     }
 }

@@ -1,9 +1,17 @@
 <?php
 declare(strict_types=1);
+
+error_reporting(E_ALL);
+ini_set('display_errors','0'); 
+ini_set('log_errors','1');
+
+if (session_status() === PHP_SESSION_NONE) {
+session_start();
+}
 error_reporting(E_ALL);
 ini_set('display_errors','1');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET,POST,DELETE,OPTIONS');
+header('Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit; // CORS preflight
 function envs($k,$d=null){ $v=getenv($k); return $v===false?$d:$v; }

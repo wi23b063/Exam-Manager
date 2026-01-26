@@ -1,25 +1,32 @@
 <?php
-function requireAdmin(): void {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-
-    if (empty($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'admin') {
-        http_response_code(403);
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['error' => 'Access denied: admin only']);
-        exit;
-    }
-}
-
 
 function requireLogin(): void
 {
-    session_start();
-    if (empty($_SESSION['user'])) {
-        http_response_code(401);
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['error' => 'Not logged in']);
-        exit;
+    if (!isset($_SESSION['user'])) {
+        jsonOut(['ok' => false, 'error' => 'unauthorized'], 401);
     }
+}
+
+function currentRole(): string
+{
+    return (string)($_SESSION['user']['role'] ?? '');
+}
+
+function requireRole(array $roles): void
+{
+    requireLogin();
+    $role = currentRole();
+    if (!in_array($role, $roles, true)) {
+        jsonOut(['ok' => false, 'error' => 'forbidden'], 403);
+    }
+}
+
+function requireAdmin(): void
+{
+    requireRole(['admin']);
+}
+
+function requireEditorOrAdmin(): void
+{
+    requireRole(['admin', 'editor']);
 }

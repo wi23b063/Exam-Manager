@@ -1,5 +1,5 @@
 /* =========================================================
-   DOM Refs (Exams) – will be assigned later
+   DOM Refs (Exams)
    ========================================================= */
 
 let examForm,
@@ -17,13 +17,22 @@ let examForm,
   examDetailBox;
 
 /* =========================================================
-   State (Exams)
+   State
    ========================================================= */
 let currentExamEditId = null;
 let currentExamQuestionIds = [];
 
 /* =========================================================
-   Init: Exams view
+   Helpers
+   ========================================================= */
+
+function canEditContent() {
+  const role = window.currentUser?.role || "viewer";
+  return role === "admin" || role === "editor";
+}
+
+/* =========================================================
+   Init
    ========================================================= */
 function initExamView() {
   examForm = $("#examForm");
@@ -46,15 +55,10 @@ function initExamView() {
   }
 
   setupExamView();
-
-  console.log("Exam view initialized.", {
-    hasExamSubject: !!examSubjectSel,
-    hasExamForm: !!examForm,
-  });
 }
 
 /* =========================================================
-   Exams: basic setup
+   Setup
    ========================================================= */
 function setupExamView() {
   updateExamTotal();
@@ -95,7 +99,7 @@ function updateExamTotal() {
 }
 
 /* =========================================================
-   Exams: load
+   Load exams list
    ========================================================= */
 async function loadExams(subjectId) {
   if (!examList) return;
@@ -104,12 +108,11 @@ async function loadExams(subjectId) {
     return;
   }
 
+  const canEdit = canEditContent();
+
   examList.innerHTML = "<p>Loading exams …</p>";
   try {
-    const res = await api("/exams?subject_id=" + encodeURIComponent(subjectId));
-    if (!res.ok) throw new Error("exams fetch failed: " + res.status);
-    const exams = await res.json();
-    console.log("exams:", exams);
+    const exams = await apiJson("/exams?subject_id=" + encodeURIComponent(subjectId));
 
     if (!exams.length) {
       examList.innerHTML = "<p>No exams for this subject.</p>";
@@ -126,22 +129,29 @@ async function loadExams(subjectId) {
               <small>
                 Typ: ${escapeHtml(ex.mode)} |
                 Fragen: ${escapeHtml(ex.question_count)} |
-                Erstellt: ${escapeHtml(ex.created_at)}
+                Erstellt: ${escapeHtml(ex.created_at || "")}
               </small>
             </div>
             <div class="ms-2">
               <button type="button" class="btn btn-sm btn-outline-primary exam-details">
                 Details
               </button>
-              <button type="button" class="btn btn-sm btn-outline-secondary exam-edit ms-1">
-                Edit
-              </button>
-             <button type="button" class="btn btn-sm btn-outline-success exam-dup ms-1">
-                Duplicate
-              </button>
-              <button type="button" class="btn btn-sm btn-outline-danger exam-del ms-1">
-                Delete
-              </button>
+
+              ${
+                canEdit
+                  ? `
+                <button type="button" class="btn btn-sm btn-outline-secondary exam-edit ms-1">
+                  Edit
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success exam-dup ms-1">
+                  Duplicate
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger exam-del ms-1">
+                  Delete
+                </button>
+              `
+                  : ""
+              }
             </div>
           </div>
         </div>
@@ -150,13 +160,12 @@ async function loadExams(subjectId) {
       .join("");
   } catch (e) {
     console.error(e);
-    examList.innerHTML =
-      "<p><b>Fehler:</b> Could not load exams. See console.</p>";
+    examList.innerHTML = "<p><b>Error:</b> Could not load exams. See console.</p>";
   }
 }
 
 /* =========================================================
-   Exams: list click handlers
+   Click handlers
    ========================================================= */
 async function onExamListClick(e) {
   const btn = e.target.closest("button");
@@ -168,51 +177,50 @@ async function onExamListClick(e) {
   const id = parseInt(card.dataset.id || "0", 10);
   if (!id) return;
 
-  // ✅ DUPLICATE muss hier stehen
+  const canEdit = canEditContent();
+
+  // Viewer: only details
+  if (!canEdit) {
+    if (btn.classList.contains("exam-details")) {
+      await showExamDetails(id);
+    }
+    return;
+  }
+
+  // Duplicate
   if (btn.classList.contains("exam-dup")) {
     await duplicateExam(id);
     return;
   }
 
-  // DELETE
+  // Delete
   if (btn.classList.contains("exam-del")) {
     if (!confirm("Really delete exam?")) return;
     try {
-      const res = await api("/exams/" + id, { method: "DELETE" });
-      if (!res.ok && res.status !== 204) {
-        const txt = await safeText(res);
-        console.error("delete exam failed", txt);
-        alert("Failed to delete exam.");
-        return;
-      }
+      await apiJson("/exams/" + id, { method: "DELETE" });
 
-      if (examSubjectSel && examSubjectSel.value) {
-        await loadExams(examSubjectSel.value);
-      }
+      if (examSubjectSel?.value) await loadExams(examSubjectSel.value);
       if (currentExamEditId === id) cancelExamEditMode();
 
-      if (
-        examDetailBox &&
-        parseInt(examDetailBox.dataset.examId || "0", 10) === id
-      ) {
+      if (examDetailBox && parseInt(examDetailBox.dataset.examId || "0", 10) === id) {
         examDetailBox.innerHTML =
           'Select an exam below and click on "Details" to view the questions.';
         examDetailBox.dataset.examId = "";
       }
     } catch (err) {
       console.error(err);
-      alert("Network error while deleting the exam.");
+      alert(err.message || "Failed to delete exam.");
     }
     return;
   }
 
-  // EDIT
+  // Edit
   if (btn.classList.contains("exam-edit")) {
     await startExamEdit(id);
     return;
   }
 
-  // DETAILS
+  // Details
   if (btn.classList.contains("exam-details")) {
     await showExamDetails(id);
     return;
@@ -220,20 +228,11 @@ async function onExamListClick(e) {
 }
 
 /* =========================================================
-   Exams: edit / cancel / save
+   Edit
    ========================================================= */
 async function startExamEdit(id) {
   try {
-    const res = await api("/exams/" + id);
-    if (!res.ok) {
-      const txt = await safeText(res);
-      console.error("load exam failed", txt);
-      alert("Failed to load exam.");
-      return;
-    }
-
-    const exam = await res.json();
-    console.log("edit exam:", exam);
+    const exam = await apiJson("/exams/" + id);
 
     currentExamEditId = exam.id;
     currentExamQuestionIds = Array.isArray(exam.questions)
@@ -245,16 +244,12 @@ async function startExamEdit(id) {
       examSubjectSel.disabled = true;
     }
 
-    if (examNameInput) {
-      examNameInput.value = exam.name || "";
-    }
+    if (examNameInput) examNameInput.value = exam.name || "";
 
     let counts = { easy: 0, medium: 0, hard: 0 };
     if (Array.isArray(exam.questions)) {
       exam.questions.forEach((q) => {
-        if (q.difficulty && counts[q.difficulty] != null) {
-          counts[q.difficulty]++;
-        }
+        if (q.difficulty && counts[q.difficulty] != null) counts[q.difficulty]++;
       });
     }
 
@@ -270,26 +265,18 @@ async function startExamEdit(id) {
       countHard.value = counts.hard;
       countHard.disabled = true;
     }
+
     updateExamTotal();
 
-    if (btnCreateAutoExam) {
-      btnCreateAutoExam.textContent = "Save changes";
-    }
-    if (btnCancelExamEdit) {
-      btnCancelExamEdit.classList.remove("d-none");
-    }
-    if (examEditHint) {
-      examEditHint.classList.remove("d-none");
-    }
-    if (examEditName) {
-      examEditName.textContent = exam.name || "";
-    }
+    if (btnCreateAutoExam) btnCreateAutoExam.textContent = "Save changes";
+    if (btnCancelExamEdit) btnCancelExamEdit.classList.remove("d-none");
+    if (examEditHint) examEditHint.classList.remove("d-none");
+    if (examEditName) examEditName.textContent = exam.name || "";
 
-    const examsView = $("#view-exams");
-    if (examsView) examsView.scrollIntoView({ behavior: "smooth" });
+    $("#view-exams")?.scrollIntoView({ behavior: "smooth" });
   } catch (err) {
     console.error(err);
-    alert("Failed to load exam.");
+    alert(err.message || "Failed to load exam.");
   }
 }
 
@@ -297,10 +284,7 @@ function cancelExamEditMode() {
   currentExamEditId = null;
   currentExamQuestionIds = [];
 
-  if (examSubjectSel) {
-    examSubjectSel.disabled = false;
-  }
-
+  if (examSubjectSel) examSubjectSel.disabled = false;
   if (countEasy) countEasy.disabled = false;
   if (countMedium) countMedium.disabled = false;
   if (countHard) countHard.disabled = false;
@@ -308,24 +292,21 @@ function cancelExamEditMode() {
   if (examForm) examForm.reset();
   updateExamTotal();
 
-  if (btnCreateAutoExam) {
-    btnCreateAutoExam.textContent = "Create automatic exam";
-  }
-  if (btnCancelExamEdit) {
-    btnCancelExamEdit.classList.add("d-none");
-  }
-  if (examEditHint) {
-    examEditHint.classList.add("d-none");
-  }
-  if (examEditName) {
-    examEditName.textContent = "";
-  }
+  if (btnCreateAutoExam) btnCreateAutoExam.textContent = "Create automatic exam";
+  if (btnCancelExamEdit) btnCancelExamEdit.classList.add("d-none");
+  if (examEditHint) examEditHint.classList.add("d-none");
+  if (examEditName) examEditName.textContent = "";
 }
 
 /* =========================================================
-   Exams: create or update
+   Create / Update
    ========================================================= */
 async function createOrUpdateExam() {
+  if (!canEditContent()) {
+    alert("Viewer cannot edit exams.");
+    return;
+  }
+
   if (!examSubjectSel) {
     alert("No exam subject select found.");
     return;
@@ -343,7 +324,7 @@ async function createOrUpdateExam() {
 
   const isEdit = !!currentExamEditId;
 
-  if (!subjectId && !isEdit) {
+  if (!isEdit && !subjectId) {
     alert("Please select a subject.");
     return;
   }
@@ -360,35 +341,13 @@ async function createOrUpdateExam() {
     : { subject_id: subjectId, name, counts };
 
   try {
-    const res = await api(url, {
-      method,
-      body: JSON.stringify(payload),
-    });
-
-    const txt = await safeText(res);
-    let data = {};
-    try {
-      data = txt ? JSON.parse(txt) : {};
-    } catch {
-      data = {};
-    }
-
-    if (!res.ok) {
-      console.error("create/update exam failed:", txt);
-      alert(
-        "Error " +
-          (isEdit ? "updating" : "creating") +
-          " the exam: " +
-          (data.error || "Unknown error")
-      );
-      return;
-    }
+    const data = await apiJson(url, { method, body: JSON.stringify(payload) });
 
     if (isEdit) {
       alert("Exam updated.");
       cancelExamEditMode();
     } else {
-      alert("Exam created (ID: " + (data.id ?? "?") + ").");
+      alert("Exam created (ID: " + (data?.id ?? "?") + ").");
       if (examNameInput) examNameInput.value = "";
     }
 
@@ -396,19 +355,17 @@ async function createOrUpdateExam() {
     if (sidToReload) await loadExams(sidToReload);
   } catch (err) {
     console.error(err);
-    alert(
-      "Network error while " +
-        (isEdit ? "updating" : "creating") +
-        " the exam."
-    );
+    alert(err.message || "Network error while saving exam.");
   }
 }
 
+/* =========================================================
+   Duplicate
+   ========================================================= */
 async function duplicateExam(id) {
+  if (!canEditContent()) return;
 
-
-  
-if (!examSubjectSel || !examSubjectSel.value) {
+  if (!examSubjectSel || !examSubjectSel.value) {
     alert("No subject selected.");
     return;
   }
@@ -416,36 +373,21 @@ if (!examSubjectSel || !examSubjectSel.value) {
   if (!confirm("Duplicate this exam?")) return;
 
   try {
-    const res = await api(`/exams/${id}/duplicate`, { method: "POST" });
-
-    const txt = await safeText(res);
-    let data = {};
-    try {
-      data = txt ? JSON.parse(txt) : {};
-    } catch {}
-
-    if (!res.ok) {
-      console.error("duplicate exam failed:", txt);
-      alert("Failed to duplicate exam: " + (data.error || res.status));
-      return;
-    }
+    const data = await apiJson(`/exams/${id}/duplicate`, { method: "POST" });
 
     alert(`Exam duplicated: ${data.name || "Copy"} (ID: ${data.id || "?"})`);
 
-    // Reload list
     await loadExams(examSubjectSel.value);
 
-    // Optional: direkt Details der Kopie anzeigen
-    if (data.id) {
-      await showExamDetails(data.id);
-    }
+    if (data.id) await showExamDetails(data.id);
   } catch (err) {
     console.error(err);
-    alert("Network error while duplicating the exam.");
+    alert(err.message || "Network error while duplicating the exam.");
   }
 }
+
 /* =========================================================
-   Exams: details
+   Details
    ========================================================= */
 async function showExamDetails(id) {
   const detail = examDetailBox || $("#examDetail");
@@ -455,25 +397,12 @@ async function showExamDetails(id) {
   detail.dataset.examId = String(id);
 
   try {
-    const res = await api("/exams/" + id);
-    if (!res.ok) {
-      const txt = await safeText(res);
-      console.error("load exam details failed", txt);
-      detail.innerHTML =
-        "<p><b>Error:</b> Failed to load exam details.</p>";
-      return;
-    }
-
-    const exam = await res.json();
-    console.log("exam detail:", exam);
+    const exam = await apiJson("/exams/" + id);
 
     const questions = Array.isArray(exam.questions) ? exam.questions : [];
 
     if (!questions.length) {
-      detail.innerHTML = `
-        <p><strong>${escapeHtml(exam.name)}</strong></p>
-        <p>This exam contains no questions.</p>
-      `;
+      detail.innerHTML = `<p><strong>${escapeHtml(exam.name)}</strong></p><p>This exam contains no questions.</p>`;
       return;
     }
 
@@ -484,12 +413,7 @@ async function showExamDetails(id) {
           ? `<ol class="mb-0 ms-3">
                ${opts
                  .sort((a, b) => a.idx - b.idx)
-                 .map(
-                   (o) =>
-                     `<li>${escapeHtml(o.text)} ${
-                       o.is_correct ? "✅" : ""
-                     }</li>`
-                 )
+                 .map((o) => `<li>${escapeHtml(o.text)} ${o.is_correct ? "✅" : ""}</li>`)
                  .join("")}
              </ol>`
           : "";
@@ -498,12 +422,8 @@ async function showExamDetails(id) {
           <div class="border rounded p-2 mb-2">
             <div class="d-flex justify-content-between">
               <div>
-                <span class="badge bg-secondary">${escapeHtml(
-                  q.difficulty || ""
-                )}</span>
-                <span class="badge bg-info ms-1">${escapeHtml(
-                  q.type || ""
-                )}</span>
+                <span class="badge bg-secondary">${escapeHtml(q.difficulty || "")}</span>
+                <span class="badge bg-info ms-1">${escapeHtml(q.type || "")}</span>
               </div>
               <div class="text-muted small">Nr. ${idx + 1}</div>
             </div>
@@ -524,7 +444,6 @@ async function showExamDetails(id) {
     `;
   } catch (err) {
     console.error(err);
-    detail.innerHTML =
-      "<p><b>Fehler:</b> Could not load exam details.</p>";
+    detail.innerHTML = "<p><b>Error:</b> Could not load exam details.</p>";
   }
 }
