@@ -1,69 +1,96 @@
 <section id="view-manage-exams" class="view">
-    <section class="card p-3">
-      <h2>Manage Exams</h2>
-  
-      <label for="mxSubject">Select Subject</label>
-      <select id="mxSubject" class="form-select mb-2"></select>
-  
-      <h3 class="h6 mt-3">Select Details to Edit Exam</h3>
-      <div id="mxExamList" class="mt-2"></div>
+  <h2 class="mb-3">Manage Exams</h2>
 
-      
-  
-      <hr class="my-4" />
-  
-      <h3 class="h6">Exam Details</h3>
-      <div id="mxExamDetail" class="small text-muted">
-        Select an exam and click “Details”.
+  <!-- Subject select -->
+  <div class="card p-3 mb-3">
+    <label for="mxSubject" class="form-label mb-1">Select Subject</label>
+    <select id="mxSubject" class="form-select"></select>
+    <div class="small text-muted mt-2">
+      Pick a subject, then choose an exam on the left to edit.
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- LEFT: exam list -->
+    <div class="col-lg-5">
+      <div class="card p-3 h-100">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h5 class="mb-0">Exams</h5>
+          <span class="badge bg-light text-dark">List</span>
+        </div>
+
+        <div id="mxExamList" class="small">
+          <div class="text-muted">Select a subject to load exams…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: exam details -->
+    <div class="col-lg-7">
+      <div class="card p-3 h-100">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h5 class="mb-0">Exam Details</h5>
+          <span class="badge bg-light text-dark">Edit</span>
+        </div>
+
+        <div id="mxExamDetail" class="small text-muted">
+          Select an exam and click <b>Details</b>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Questions (Pool) -->
+  <div id="mxAddSection" class="card p-3 mt-3 d-none">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h5 class="mb-0">Add Questions</h5>
+        <div class="small text-muted">
+          Filter the pool and click <b>+</b> to add questions into the selected exam.
+        </div>
+      </div>
+      <div class="small text-muted" id="mxInfo"></div>
+    </div>
+
+    <hr class="my-3" />
+
+    <!-- Filters -->
+    <div class="row g-2">
+      <div class="col-md-4">
+        <label class="form-label" for="mxDifficulty">Difficulty</label>
+        <select id="mxDifficulty" class="form-select">
+          <option value="">All</option>
+          <option value="easy">easy</option>
+          <option value="medium">medium</option>
+          <option value="hard">hard</option>
+        </select>
       </div>
 
+      <div class="col-md-4">
+        <label class="form-label" for="mxType">Type</label>
+        <select id="mxType" class="form-select">
+          <option value="">All</option>
+          <option value="SCQ">SCQ</option>
+          <option value="MCQ">MCQ</option>
+          <option value="TF">TF</option>
+          <option value="SA">SA</option>
+          <option value="LA">LA</option>
+        </select>
+      </div>
 
-      <section id="mxAddSection" class="card p-3 mt-4 d-none">
-        <h3 class="h6 mb-3">Add Questions into selected Exam</h3>
-      
-        <!-- Filter -->
-        <div class="row g-2">
-          <div class="col-md-4">
-            <label class="form-label" for="mxDifficulty">Difficulty</label>
-            <select id="mxDifficulty" class="form-select">
-              <option value="">All</option>
-              <option value="easy">easy</option>
-              <option value="medium">medium</option>
-              <option value="hard">hard</option>
-            </select>
-          </div>
-      
-          <div class="col-md-4">
-            <label class="form-label" for="mxType">Type</label>
-            <select id="mxType" class="form-select">
-              <option value="">All</option>
-              <option value="SCQ">SCQ</option>
-              <option value="MCQ">MCQ</option>
-              <option value="TF">TF</option>
-              <option value="SA">SA</option>
-              <option value="LA">LA</option>
-            </select>
-          </div>
-      
-          <div class="col-md-4">
-            <label class="form-label" for="mxSearch">Search</label>
-            <input id="mxSearch" class="form-control" />
-          </div>
-        </div>
-      
-        <div class="mt-3 d-flex gap-2 flex-wrap">
-          <button id="mxApplyFilters" class="btn btn-sm btn-success">Search</button>
-          <button id="mxResetFilters" class="btn btn-sm btn-outline-secondary">Reset</button>
-          <button id="mxPrev" class="btn btn-sm btn-outline-secondary">Prev</button>
-          <button id="mxNext" class="btn btn-sm btn-outline-secondary">Next</button>
-          <small id="mxInfo" class="text-muted"></small>
-        </div>
-      
-        <div id="mxPoolList" class="mt-3"></div>
-      </section>
-      
-      
+      <div class="col-md-4">
+        <label class="form-label" for="mxSearch">Search</label>
+        <input id="mxSearch" class="form-control" placeholder="Search question text..." />
+      </div>
+    </div>
 
-    </section>
-  </section>
-  
+    <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
+      <button id="mxApplyFilters" class="btn btn-sm btn-success" type="button">Search</button>
+      <button id="mxResetFilters" class="btn btn-sm btn-outline-secondary" type="button">Reset</button>
+      <button id="mxPrev" class="btn btn-sm btn-outline-secondary" type="button">Prev</button>
+      <button id="mxNext" class="btn btn-sm btn-outline-secondary" type="button">Next</button>
+    </div>
+
+    <div id="mxPoolList" class="mt-3"></div>
+  </div>
+</section>
