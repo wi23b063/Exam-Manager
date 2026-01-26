@@ -1,13 +1,18 @@
+/* =========================================================
+   Login State
+   ========================================================= */
+
 let currentUser = null;
+window.currentUser = null;
 
 /* =========================================================
-   DOM Refs (Login)
+   DOM Refs
    ========================================================= */
 
 let loginForm, userInput, passInput, msg;
 
 /* =========================================================
-   Init: Login view
+   Init Login View
    ========================================================= */
 
 function initLoginView() {
@@ -22,7 +27,7 @@ function initLoginView() {
 }
 
 /* =========================================================
-   Login submit
+   Login Submit
    ========================================================= */
 
 async function onLoginSubmit(e) {
@@ -37,60 +42,80 @@ async function onLoginSubmit(e) {
   }
 
   try {
-    const res = await api("/login", {
+    const data = await apiJson("/login", {
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      showMsg(data.message || "Login failed", "error");
+    if (!data?.ok || !data?.user) {
+      console.error("Unexpected login response:", data);
+      showMsg("Login failed (unexpected response)", "error");
       return;
     }
 
-  // SAVE USER
-  currentUser = data.user;
-  sessionStorage.setItem("user", JSON.stringify(currentUser));
+    currentUser = data.user;
+    window.currentUser = currentUser;
+    sessionStorage.setItem("user", JSON.stringify(currentUser));
+    applyRoleUI(currentUser);
 
-  // UPDATE UI
-  updateGreeting(currentUser);
-
-  // SHOW HEADER + APP
-  const header = document.querySelector(".topbar");
-  if (header) header.classList.remove("d-none");
-
-  const appRoot = document.getElementById("app-root");
-  if (appRoot) appRoot.classList.remove("d-none");
-
-  const footer = document.getElementById("footer-placeholder");
-  if (footer) footer.classList.remove("d-none");
-
-  // HIDE LOGIN
-  document.getElementById("view-login-placeholder")?.classList.add("d-none");
-  document.getElementById("view-login")?.classList.remove("d-none");
-
-  // NAVIGATE TO QUESTIONS VIEW
-  const btn = document.querySelector('[data-view="questions"]');
-  if (btn) btn.click();
+    updateGreeting(currentUser);
+    window.currentUser = currentUser;   // wichtig für andere Dateien
+    applyRoleUI(currentUser);
+    
+    showApp();
+    applyRoleUI(currentUser);
   } catch (err) {
-    showMsg("Server error", "error");
+    console.error("Login failed:", err);
+    showMsg(err.message || "Server error", "error");
   }
 }
 
 /* =========================================================
-   UI helper (login messages)
+   Restore Session
    ========================================================= */
+
+async function restoreSession() {
+  try {
+    const data = await apiJson("/me");
+    if (!data?.ok || !data?.user) return;
+
+    currentUser = data.user;
+    window.currentUser = currentUser;
+    sessionStorage.setItem("user", JSON.stringify(currentUser));
+
+    updateGreeting(currentUser);
+    showApp();
+    applyRoleUI(currentUser);
+  } catch {
+    // not logged in → keep login visible
+  }
+}
+
+/* =========================================================
+   UI Helpers
+   ========================================================= */
+
+function showApp() {
+  // hide login
+  document.getElementById("view-login-placeholder")?.classList.add("d-none");
+
+  // show app
+  document.querySelector(".topbar")?.classList.remove("d-none");
+  document.getElementById("app-root")?.classList.remove("d-none");
+  document.getElementById("footer-placeholder")?.classList.remove("d-none");
+
+  // default view
+  document.querySelector('[data-view="questions"]')?.click();
+}
 
 function showMsg(text, type) {
   if (!msg) return;
-
   msg.textContent = text;
   msg.style.color = type === "success" ? "green" : "red";
 }
 
 /* =========================================================
-   Greeting (Hello, username)
+   Greeting + Logout
    ========================================================= */
 
 function updateGreeting(user) {
@@ -98,52 +123,66 @@ function updateGreeting(user) {
   const nameSpan = document.getElementById("greetUsername");
   const logoutBtn = document.getElementById("logoutBtn");
 
- if (!greetBox || !nameSpan || !user) return;
+  if (!greetBox || !nameSpan || !user) return;
 
   nameSpan.textContent = user.username;
   greetBox.classList.remove("d-none");
   logoutBtn?.classList.remove("d-none");
 }
 
-/* =========================================================
-   Logout
-   ========================================================= */
-
 async function logout() {
   try {
-    await api("/logout", { method: "POST" });
-  } catch (e) {
-    console.warn("Logout request failed");
-  }
+    await apiJson("/logout", { method: "POST" });
+  } catch {}
 
-  // Clear frontend state
   sessionStorage.removeItem("user");
   currentUser = null;
+  window.currentUser = null;
 
-  // Hide header, app, footer
   document.querySelector(".topbar")?.classList.add("d-none");
   document.getElementById("app-root")?.classList.add("d-none");
   document.getElementById("footer-placeholder")?.classList.add("d-none");
 
-  // Reset greeting & logout button
-  const greetBox = document.getElementById("userGreeting");
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (greetBox) greetBox.classList.add("d-none");
-  if (logoutBtn) logoutBtn.classList.add("d-none");
+  // reset greeting
+  document.getElementById("userGreeting")?.classList.add("d-none");
+  document.getElementById("logoutBtn")?.classList.add("d-none");
 
-  // Show login view
+  // show login
   document.getElementById("view-login-placeholder")?.classList.remove("d-none");
-  const loginView = document.getElementById("view-login-placeholder");
-  console.log("loginView display:", window.getComputedStyle(loginView).display);
-
-
-  // Re-initialize login form
   initLoginView();
+}
 
-console.log("Logging out...");
-console.log("Header:", document.querySelector(".topbar"));
-console.log("App Root:", document.getElementById("app-root"));
-console.log("Footer:", document.getElementById("footer-placeholder"));
-console.log("Login view:", document.getElementById("view-login-placeholder"));
+/* =========================================================
+   Role UI (Admin / Editor / Viewer)
+   ========================================================= */
 
+   function applyRoleUI(user) {
+  const role = user?.role || "viewer";
+  const isAdmin = role === "admin";
+  const canEdit = role === "admin" || role === "editor";
+  const isViewer = role === "viewer";
+
+  // ---- NAV Buttons ----
+  document.getElementById("btnManageUsers")?.classList.toggle("d-none", !isAdmin);
+
+  // Viewer darf keine Create/Manage Exams Buttons sehen
+  document.getElementById("btnManualExams")?.classList.toggle("d-none", isViewer);
+  document.getElementById("btnManageExams")?.classList.toggle("d-none", isViewer);
+
+  // Optional: Viewer soll Auto-Exams Seite auch nicht sehen? (du wolltest "nur sehen", also NICHT verstecken)
+  // document.getElementById("btnExams")?.classList.toggle("d-none", isViewer);
+
+  // ---- Views hart verstecken (falls Viewer irgendwie hinklickt) ----
+  document.getElementById("view-manage-users")?.classList.toggle("d-none", !isAdmin);
+  document.getElementById("view-manual-exams")?.classList.toggle("d-none", isViewer);
+  document.getElementById("view-manage-exams")?.classList.toggle("d-none", isViewer);
+
+  // ---- Forms verstecken (Questions + Exams Create) ----
+  document.getElementById("qForm")?.closest(".card")?.classList.toggle("d-none", !canEdit);
+  document.getElementById("examForm")?.closest(".card")?.classList.toggle("d-none", !canEdit);
+
+  // Viewer: automatisch auf Questions (Read-only) wechseln
+  if (isViewer) {
+    document.querySelector('[data-view="questions"]')?.click();
+  }
 }

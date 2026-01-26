@@ -17,6 +17,14 @@ let subjectSel,
 let currentEditId = null; // question in edit
 
 /* =========================================================
+   Permissions
+   ========================================================= */
+function canEditContent() {
+  const role = window.currentUser?.role || "viewer";
+  return role === "admin" || role === "editor";
+}
+
+/* =========================================================
    Init: Questions view
    ========================================================= */
 function initQuestionView() {
@@ -48,18 +56,36 @@ function initQuestionView() {
   }
 
   cancelBtn.addEventListener("click", cancelEditMode);
+
+  // Viewer darf nicht submitten (aber View soll trotzdem funktionieren)
   form.addEventListener("submit", onSubmitQuestion);
+
   if (list) list.addEventListener("click", onQuestionListClick);
   if (subjectSel) subjectSel.addEventListener("change", loadQuestions);
   if (typeSel) typeSel.addEventListener("change", updateEditorVisibility);
 
-  console.log("Question view initialized.", {
-    hasSubject: !!subjectSel,
-    hasForm: !!form,
-    hasType: !!typeSel,
-  });
+  // Viewer UI: Add-Form verstecken (Card wo das Formular drin ist)
+  applyQuestionsRoleUI();
 
   updateEditorVisibility();
+}
+
+/* =========================================================
+   Viewer UI adjustments
+   ========================================================= */
+function applyQuestionsRoleUI() {
+  const viewer = !canEditContent();
+
+  // Die Card über dem Formular verstecken
+  // (form liegt in einer Card in view-questions.html)
+  const formCard = document.getElementById("qForm")?.closest(".card");
+  formCard?.classList.toggle("d-none", viewer);
+
+  // Falls jemand per DOM doch edit gestartet hat: reset
+  if (viewer) {
+    currentEditId = null;
+    if (cancelBtn) cancelBtn.style.display = "none";
+  }
 }
 
 /* =========================================================
@@ -79,9 +105,8 @@ function updateEditorVisibility() {
 async function loadSubjects() {
   try {
     if (list) statusMsg("Lade Fächer …");
-    const res = await api("/subjects");
-    if (!res.ok) throw new Error("subjects fetch failed: " + res.status);
-    const subjects = await res.json();
+
+    const subjects = await apiJson("/subjects");
     console.log("subjects:", subjects);
 
     if (!subjectSel) {
@@ -97,47 +122,41 @@ async function loadSubjects() {
       .join("");
 
     subjectSel.innerHTML = optionsHtml;
-    if (examSubjectSel) examSubjectSel.innerHTML = optionsHtml;
 
-    // NEW: Manage Exams subject select
+   
+    // Exam Subject Select (Auto Exams View)
+    const exSel = document.getElementById("examSubject");
+    if (exSel) exSel.innerHTML = optionsHtml;
+
+    // Manage Exams subject select (falls vorhanden)
     const mxSel = document.getElementById("mxSubject");
     if (mxSel) {
       mxSel.innerHTML = optionsHtml;
-      if (!mxSel.value) mxSel.value = subjects[0].id;
+      if (!mxSel.value && subjects[0]) mxSel.value = subjects[0].id;
 
-      if (typeof loadManageExams === "function") {
+      if (typeof loadManageExams === "function" && mxSel.value) {
         loadManageExams(mxSel.value);
       }
     }
 
-
     if (subjects.length === 0) {
-      if (list)
-        list.innerHTML =
-          "<p>No existing subjects. Please create one first.</p>";
-      if (examList)
-        examList.innerHTML =
-          "<p>No existing subjects. Please create one first.</p>";
+      if (list) list.innerHTML = "<p>No existing subjects.</p>";
       return;
     }
 
-    if (!subjectSel.value) subjectSel.value = String(subjects[0].id);
-    if (examSubjectSel && !examSubjectSel.value)
-      examSubjectSel.value = String(subjects[0].id);
+    if (!subjectSel.value && subjects[0]) subjectSel.value = String(subjects[0].id);
 
     await loadQuestions();
 
-    if (examSubjectSel && examSubjectSel.value) {
-      await loadExams(examSubjectSel.value);
+    // Exams initial load, wenn Funktion existiert
+    if (typeof loadExams === "function") {
+      const exSel = document.getElementById("examSubject");
+      if (exSel && exSel.value) await loadExams(exSel.value);
     }
   } catch (e) {
     console.error(e);
     if (list) {
       list.innerHTML =
-        "<p><b>Error:</b> Could not load subjects. See console.</p>";
-    }
-    if (examList) {
-      examList.innerHTML =
         "<p><b>Error:</b> Could not load subjects. See console.</p>";
     }
   }
@@ -149,54 +168,66 @@ async function loadSubjects() {
 async function loadQuestions() {
   if (!subjectSel) return;
   const sid = subjectSel.value;
+
   if (!sid) {
     if (list) list.innerHTML = "<p>No subject selected.</p>";
     return;
   }
 
+  const canEdit = canEditContent();
+
   try {
     statusMsg("Loading questions …");
-    const res = await api("/questions?subject_id=" + encodeURIComponent(sid));
-    if (!res.ok) throw new Error("questions fetch failed: " + res.status);
-    const items = await res.json();
+    const items = await apiJson("/questions?subject_id=" + encodeURIComponent(sid));
     console.log("questions:", items);
 
     if (!list) return;
 
     list.innerHTML = items.length
       ? items
-          .map(
-            (q) => `
-        <div class="q" data-id="${q.id}">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;">
-            <div>
-              <span class="badge bg-secondary">${escapeHtml(
-                q.difficulty
-              )}</span>
-              <span class="badge bg-info ms-1">${escapeHtml(q.type || "SCQ")}</span>
-              ${escapeHtml(q.text)}
-            </div>
-            <div>
-              <button class="edit btn btn-sm btn-outline-secondary" type="button">
-                Edit
-              </button>
-              <button class="del btn btn-sm btn-outline-danger" type="button">
-                Delete
-              </button>
-            </div>
-          </div>
-          <ol style="margin:.5rem 0 0 1rem;">
-            ${q.options
-              .sort((a, b) => a.idx - b.idx)
-              .map(
-                (o) =>
-                  `<li>${escapeHtml(o.text)} ${o.is_correct ? "✅" : ""}</li>`
-              )
-              .join("")}
-          </ol>
-          <hr/>
-        </div>`
-          )
+          .map((q) => {
+            const buttonsHtml = canEdit
+              ? `
+                <button class="edit btn btn-sm btn-outline-secondary" type="button">
+                  Edit
+                </button>
+                <button class="del btn btn-sm btn-outline-danger" type="button">
+                  Delete
+                </button>
+              `
+              : "";
+
+            const optionsHtml = Array.isArray(q.options)
+              ? q.options
+                  .slice()
+                  .sort((a, b) => a.idx - b.idx)
+                  .map(
+                    (o) =>
+                      `<li>${escapeHtml(o.text)} ${o.is_correct ? "✅" : ""}</li>`
+                  )
+                  .join("")
+              : "";
+
+            return `
+              <div class="q" data-id="${q.id}">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;">
+                  <div>
+                    <span class="badge bg-secondary">${escapeHtml(q.difficulty)}</span>
+                    <span class="badge bg-info ms-1">${escapeHtml(q.type || "SCQ")}</span>
+                    ${escapeHtml(q.text)}
+                  </div>
+                  <div>${buttonsHtml}</div>
+                </div>
+
+                ${
+                  optionsHtml
+                    ? `<ol style="margin:.5rem 0 0 1rem;">${optionsHtml}</ol>`
+                    : ""
+                }
+                <hr/>
+              </div>
+            `;
+          })
           .join("")
       : "<p>No questions in the selected subject.</p>";
   } catch (e) {
@@ -212,80 +243,94 @@ async function loadQuestions() {
    Questions: click handlers
    ========================================================= */
 async function onQuestionListClick(e) {
+  const canEdit = canEditContent();
+  if (!canEdit) return; // Viewer darf nix klicken
+
   const btn = e.target;
   const card = btn.closest(".q");
   if (!card) return;
+
   const id = Number(card.dataset.id);
 
   // delete
   if (btn.classList.contains("del")) {
     if (!confirm("Really delete question?")) return;
-    const r = await api("/questions/" + id, { method: "DELETE" });
-    if (!r.ok) return alert("Delete failed");
-    if (currentEditId === id) cancelEditMode();
-    return loadQuestions();
+    try {
+      await apiJson("/questions/" + id, { method: "DELETE" });
+      if (currentEditId === id) cancelEditMode();
+      return loadQuestions();
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Delete failed");
+    }
+    return;
   }
 
   // edit
   if (btn.classList.contains("edit")) {
-    const r = await api("/questions/" + id);
-    if (!r.ok) return alert("Could not load question");
-    const q = await r.json();
+    try {
+      const q = await apiJson("/questions/" + id);
 
-    if (subjectSel) subjectSel.value = q.subject_id;
-    if (diffSel) diffSel.value = q.difficulty;
-    if (qtext) qtext.value = q.text;
+      if (subjectSel) subjectSel.value = q.subject_id;
+      if (diffSel) diffSel.value = q.difficulty;
+      if (qtext) qtext.value = q.text;
 
-    if (typeSel) typeSel.value = q.type || "SCQ";
-    updateEditorVisibility();
+      if (typeSel) typeSel.value = q.type || "SCQ";
+      updateEditorVisibility();
 
-    const type = typeSel ? typeSel.value : "SCQ";
+      const type = typeSel ? typeSel.value : "SCQ";
 
-    if (type === "MCQ") {
-      const inputs = $$(".opt-mcq");
-      const checks = $$('input[name="mcq_correct"]');
-      q.options
-        .sort((a, b) => a.idx - b.idx)
-        .forEach((o, i) => {
-          if (inputs[i]) inputs[i].value = o.text;
-          if (checks[i]) checks[i].checked = !!o.is_correct;
-        });
-    } else if (type === "TF") {
-      const tfRadios = $$('input[name="tf_correct"]');
-      tfRadios.forEach((r) => (r.checked = false));
-      const correctOpt = q.options.find((o) => o.is_correct);
-      if (correctOpt) {
-        const targetVal = correctOpt.text.toLowerCase().startsWith("t")
-          ? "true"
-          : "false";
-        const radio = tfRadios.find((r) => r.value === targetVal);
-        if (radio) radio.checked = true;
+      if (type === "MCQ") {
+        const inputs = $$(".opt-mcq");
+        const checks = $$('input[name="mcq_correct"]');
+        q.options
+          .slice()
+          .sort((a, b) => a.idx - b.idx)
+          .forEach((o, i) => {
+            if (inputs[i]) inputs[i].value = o.text;
+            if (checks[i]) checks[i].checked = !!o.is_correct;
+          });
+      } else if (type === "TF") {
+        const tfRadios = $$('input[name="tf_correct"]');
+        tfRadios.forEach((r) => (r.checked = false));
+        const correctOpt = q.options.find((o) => o.is_correct);
+        if (correctOpt) {
+          const targetVal = correctOpt.text.toLowerCase().startsWith("t")
+            ? "true"
+            : "false";
+          const radio = tfRadios.find((r) => r.value === targetVal);
+          if (radio) radio.checked = true;
+        }
+      } else if (type === "SA") {
+        const inp = $("#sa_answer");
+        if (inp && q.options && q.options.length > 0) {
+          inp.value = q.options[0].text || "";
+        }
+      } else if (type === "LA") {
+        const ta = $("#la_answer");
+        if (ta && q.options && q.options.length > 0) {
+          ta.value = q.options[0].text || "";
+        }
+      } else {
+        // SCQ
+        const inputs = $$(".opt-scq");
+        const radios = $$('input[name="scq_correct"]');
+        q.options
+          .slice()
+          .sort((a, b) => a.idx - b.idx)
+          .forEach((o, i) => {
+            if (inputs[i]) inputs[i].value = o.text;
+            if (radios[i]) radios[i].checked = !!o.is_correct;
+          });
       }
-    } else if (type === "SA") {
-      const inp = $("#sa_answer");
-      if (inp && q.options && q.options.length > 0) {
-        inp.value = q.options[0].text || "";
-      }
-    } else if (type === "LA") {
-      const ta = $("#la_answer");
-      if (ta && q.options && q.options.length > 0) {
-        ta.value = q.options[0].text || "";
-      }
-    } else {
-      // SCQ
-      const inputs = $$(".opt-scq");
-      const radios = $$('input[name="scq_correct"]');
-      q.options
-        .sort((a, b) => a.idx - b.idx)
-        .forEach((o, i) => {
-          if (inputs[i]) inputs[i].value = o.text;
-          if (radios[i]) radios[i].checked = !!o.is_correct;
-        });
+
+      currentEditId = q.id;
+      setEditMode(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Could not load question");
     }
-
-    currentEditId = q.id;
-    setEditMode(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 }
 
@@ -294,6 +339,11 @@ async function onQuestionListClick(e) {
    ========================================================= */
 async function onSubmitQuestion(e) {
   e.preventDefault();
+
+  if (!canEditContent()) {
+    alert("Viewer cannot edit questions.");
+    return;
+  }
 
   if (!subjectSel || !qtext || !diffSel || !typeSel) {
     alert("Form not fully initialized.");
@@ -394,22 +444,19 @@ async function onSubmitQuestion(e) {
   const url = currentEditId ? "/questions/" + currentEditId : "/questions";
   const method = currentEditId ? "PUT" : "POST";
 
-  const res = await api(url, {
-    method,
-    body: JSON.stringify(payload),
-  });
+  try {
+    await apiJson(url, { method, body: JSON.stringify(payload) });
 
-  toggleSaving(false);
-
-  if (!res.ok) {
-    console.error("Failed to save", await safeText(res));
-    return alert("Failed to save.");
+    if (form) form.reset();
+    setEditMode(false);
+    updateEditorVisibility();
+    await loadQuestions();
+  } catch (err) {
+    console.error("Failed to save", err);
+    alert(err.message || "Failed to save.");
+  } finally {
+    toggleSaving(false);
   }
-
-  if (form) form.reset();
-  setEditMode(false);
-  updateEditorVisibility();
-  await loadQuestions();
 }
 
 /* =========================================================

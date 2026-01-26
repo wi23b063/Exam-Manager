@@ -34,9 +34,9 @@ function initManageUsersView() {
      ====================== */
   async function fetchUsers() {
     try {
-      const res = await fetch("/api/users");
-      const data = await res.json();
+      const data = await apiJson("/users");
       renderUsers(data);
+      
     } catch (err) {
       userListDiv.innerHTML = "<em>Error loading users.</em>";
       console.error(err);
@@ -102,9 +102,7 @@ function initManageUsersView() {
       if (!confirm(`Delete user "${row.dataset.username}"?`)) return;
 
       try {
-        const res = await fetch(`/api/users/${row.dataset.id}`, {
-          method: "DELETE",
-        });
+        const res =await apiJson(`/users/${row.dataset.id}`, { method: "DELETE" });
         if (!res.ok) throw new Error();
         fetchUsers();
         resetForm();
@@ -146,11 +144,10 @@ function initManageUsersView() {
     }
 
     try {
-      const res = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, role, password }),
-      });
+      const res = await apiJson("/users", {
+      method: "POST",
+      body: JSON.stringify({ username, email, role, password }),
+    });
 
       if (!res.ok) {
         const err = await res.json();
@@ -182,12 +179,10 @@ function initManageUsersView() {
     }
 
     try {
-      const res = await fetch(`/api/users/${editUserId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, role }),
-      });
-
+      const res = await apiJson(`/users/${editUserId}`, {
+      method: "PUT",
+      body: JSON.stringify({ username, email, role }),
+    });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message);

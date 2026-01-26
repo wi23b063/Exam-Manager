@@ -1,123 +1,298 @@
 /* =========================================================
-   Partials + navigation
+   Exam Manager – SPA Main Controller (with login, correct paths)
    ========================================================= */
 
-// Load an HTML partial into a placeholder element
-function loadPartial(placeholderId, url, callback) {
-  const el = document.getElementById(placeholderId);
-  if (!el) return;
+window.currentUser = null;
 
-  fetch(url)
-    .then((response) => response.text())
-    .then((html) => {
-      el.innerHTML = html;
-      if (typeof callback === "function") callback();
-    })
-    .catch((err) => {
-      console.error("Error loading partial:", url, err);
-    });
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadLayout();
+  setupNavigation();
+  await restoreSession();
+});
+
+/* =========================================================
+   Layout (Header / Footer)  ✅ PATH FIX
+   ========================================================= */
+
+async function loadLayout() {
+  await Promise.all([
+    loadInto("header-placeholder", "header.html"),
+    loadInto("footer-placeholder", "footer.html"),
+  ]);
 }
 
-// Navigation between views
-function initViewNavigation() {
-  document.addEventListener("click", function (event) {
-    const btn = event.target.closest("[data-view]");
+async function loadInto(targetId, partialFile) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+
+  // ✅ IMPORTANT: your folder is "partials/", not "frontend/partials/"
+  const res = await fetch(`partials/${partialFile}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Failed to load partial: partials/${partialFile}`);
+
+  el.innerHTML = await res.text();
+}
+
+/* =========================================================
+   Navigation (delegated)
+   ========================================================= */
+
+function setupNavigation() {
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-view]");
     if (!btn) return;
 
-    const target = btn.dataset.view; // "questions", "exams", "manual-exams"
+    const view = btn.dataset.view;
+    if (!view) return;
 
-    const navButtons = document.querySelectorAll("[data-view]");
-    const views = document.querySelectorAll("#app-root .view");
+    // auth guard
+    const protectedViews = new Set([
+      "questions",
+      "exams",
+      "manual-exams",
+      "manage-exams",
+      "manage-users",
+      "viewer",
+    ]);
+    if (protectedViews.has(view) && !window.currentUser) {
+      loadView("login");
+      return;
+    }
 
-    // set active button
-    navButtons.forEach((b) => b.classList.toggle("active", b === btn));
+    loadView(view);
+  });
 
-    // show/hide views
-    views.forEach((v) => {
-      const isTarget = v.id === "view-" + target;
-      v.classList.toggle("d-none", !isTarget);
-    });
-
-    // OPTIONAL: wenn man zur Manual-Exam-View geht, könnte man reload triggern
-    // (lassen wir erstmal weg, init läuft einmal beim Laden)
+  document.addEventListener("click", (e) => {
+    if (e.target?.id === "logoutBtn") logout();
   });
 }
 
 /* =========================================================
-   Global DOMContentLoaded: load partials + init everything
+   Session Restore
    ========================================================= */
 
-let questionsReady = false;
-let examsReady = false;
-let manualReady = false;
+async function restoreSession() {
+  try {
+    const data = await apiJson("/me");
+    if (data?.user) {
+      onLoggedIn(data.user);
+      return;
+    }
+  } catch {
+    // ignore
+  }
+  onLoggedOut();
+  await loadView("login");
+}
 
-function maybeInitData() {
-  // only load subjects once all views exist, so all selects can be filled
-  if (questionsReady && examsReady && manualReady) {
-    if (typeof loadSubjects === "function") {
-      loadSubjects();
+/* =========================================================
+   View Loader ✅ PATH FIX
+   ========================================================= */
+
+async function loadView(view) {
+  try {
+    const app = document.getElementById("app");
+    if (!app) throw new Error("#app missing in index.html");
+
+    // ✅ IMPORTANT: views are in "partials/"
+    const res = await fetch(`partials/view-${view}.html`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`View not found: partials/view-${view}.html`);
+
+    app.innerHTML = await res.text();
+    initView(view);
+  } catch (e) {
+    console.error(e);
+    const app = document.getElementById("app");
+    if (app) {
+      app.innerHTML = `
+        <div class="alert alert-danger">
+          Failed to load view: <b>${escapeHtml(String(view))}</b><br/>
+          <small>${escapeHtml(e.message || String(e))}</small>
+        </div>
+      `;
     }
   }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  // header (then nav + logout)
-  loadPartial("header-placeholder", "partials/header.html", function () {
-    initViewNavigation();
+/* =========================================================
+   Init per view
+   ========================================================= */
 
-    const logoutBtn = document.getElementById("logoutBtn");
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", logout);
+function initView(view) {
+  switch (view) {
+    case "login":
+      initLoginView();
+      break;
+
+    case "questions":
+      initQuestionView();
+      loadSubjects();
+      break;
+
+    case "exams":
+      initExamView();
+      loadSubjects();
+      break;
+
+    case "manual-exams":
+      if (typeof initManualExamsView === "function") initManualExamsView();
+      break;
+
+    case "manage-exams":
+      if (typeof initManageExamsView === "function") initManageExamsView();
+      if (typeof loadSubjects === "function") loadSubjects();
+      break;
+
+    case "manage-users":
+      if (typeof initManageUsersView === "function") initManageUsersView();
+      break;
+
+    case "viewer":
+      if (typeof initViewerView === "function") initViewerView();
+      break;
+
+    default:
+      console.warn("No init for view:", view);
+  }
+}
+
+/* =========================================================
+   Login View (your new view-login.html)
+   ========================================================= */
+
+function initLoginView() {
+  const form = document.getElementById("loginForm");
+  const userEl = document.getElementById("loginUsername");
+  const passEl = document.getElementById("loginPassword");
+  const errEl = document.getElementById("loginError");
+
+  if (!form || !userEl || !passEl) {
+    console.warn("Login elements missing in view-login.html");
+    return;
+  }
+
+  if (form.dataset.bound === "1") return;
+  form.dataset.bound = "1";
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (errEl) errEl.textContent = "";
+
+    const username = userEl.value.trim();
+    const password = passEl.value;
+
+    if (!username || !password) {
+      if (errEl) errEl.textContent = "Please enter username and password.";
+      return;
+    }
+
+    try {
+      const data = await apiJson("/login", {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!data?.user) {
+        if (errEl) errEl.textContent = "Login failed (unexpected response).";
+        console.error("Unexpected login response:", data);
+        return;
+      }
+
+      onLoggedIn(data.user);
+    } catch (err) {
+      console.error("Login failed:", err);
+      if (errEl) errEl.textContent = err.message || "Login failed.";
     }
   });
+}
 
-  // footer
-  loadPartial("footer-placeholder", "partials/footer.html");
+/* =========================================================
+   Logged-in / Logged-out UI
+   ========================================================= */
 
-  // login view + session
-  loadPartial("view-login-placeholder", "partials/login.html", function () {
-    initLoginView();
-    restoreSession();
-  });
+function onLoggedIn(user) {
+  window.currentUser = user;
+  sessionStorage.setItem("user", JSON.stringify(user));
 
+  // show header
+  document.querySelector(".topbar")?.classList.remove("d-none");
+  document.getElementById("logoutBtn")?.classList.remove("d-none");
 
-  loadPartial("view-manage-users-placeholder", "partials/view-manage-users.html", function () {
-    if (typeof initManageUsersView === "function") {
-      initManageUsersView();
-    }
-  });
+  // greeting
+  const greetBox = document.getElementById("userGreeting");
+  const nameSpan = document.getElementById("greetUsername");
+  if (greetBox && nameSpan) {
+    nameSpan.textContent = user.username;
+    greetBox.classList.remove("d-none");
+  }
 
+  applyRoleUI(user);
+}
 
+function onLoggedOut() {
+  window.currentUser = null;
+  sessionStorage.removeItem("user");
 
-  // questions view
-  loadPartial("view-questions-placeholder", "partials/view-questions.html", function () {
-    initQuestionView();
-    questionsReady = true;
-    maybeInitData();
-  });
+  document.querySelector(".topbar")?.classList.add("d-none");
+  document.getElementById("logoutBtn")?.classList.add("d-none");
+  document.getElementById("userGreeting")?.classList.add("d-none");
+}
 
-  // exams view
-  loadPartial("view-exams-placeholder", "partials/view-exams.html", function () {
-    initExamView();
-    examsReady = true;
-    maybeInitData();
-  });
+/* =========================================================
+   Role based UI + default view
+   ========================================================= */
 
-  //  manual exams view
-  loadPartial("view-manual-exams-placeholder", "partials/view-manual-exams.html", function () {
-    // init function is provided by frontend/js/manualExams.js
-    if (typeof initManualExamsView === "function") {
-      initManualExamsView();
-    }
-    manualReady = true;
-    maybeInitData();
-  });
+function applyRoleUI(user) {
+  const role = user?.role || "viewer";
+  const isAdmin = role === "admin";
+  const isEditor = role === "editor";
+  const isViewer = role === "viewer";
 
-  // manual exams view
-  loadPartial("view-manage-exams-placeholder", "partials/view-manage-exams.html", function () {
-    if (typeof initManageExamsView === "function") {
-      initManageExamsView();
-    }
-  });
-  
-});
+  // --- Buttons: default hide/show rules ---
+  // Viewer: NUR Viewer-Button
+  toggle("btnViewerView", !isViewer);
+
+  toggle("btnQuestions", isViewer);     // viewer versteckt
+  toggle("btnExams", isViewer);         // viewer versteckt
+  toggle("btnManualExams", true);       // viewer/editor/admin? -> du willst viewer nicht, also true bei viewer; unten überschreiben wir für editor/admin
+  toggle("btnManageExams", true);
+  toggle("btnManageUsers", true);
+
+  // Admin
+  if (isAdmin) {
+    toggle("btnQuestions", false);
+    toggle("btnExams", false);
+    toggle("btnManualExams", false);
+    toggle("btnManageExams", false);
+    toggle("btnManageUsers", false);
+  }
+
+  // Editor
+  if (isEditor) {
+    toggle("btnQuestions", false);
+    toggle("btnExams", false);
+    toggle("btnManualExams", false);
+    toggle("btnManageExams", false);
+    toggle("btnManageUsers", true); // editor nicht
+  }
+
+  // Default view je Rolle
+  if (isViewer) loadView("viewer");
+  else loadView("questions");
+}
+
+function toggle(id, hide) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle("d-none", hide);
+}
+
+/* =========================================================
+   Logout
+   ========================================================= */
+
+async function logout() {
+  try {
+    await apiJson("/logout", { method: "POST" });
+  } catch {}
+  onLoggedOut();
+  loadView("login");
+}

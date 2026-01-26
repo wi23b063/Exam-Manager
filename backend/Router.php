@@ -9,202 +9,170 @@ class Router
         $m = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $p = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 
-        // ---------------- AUTH: login, logout, session ----------------
-
+        // ---------------- AUTH ----------------
         if ($m === 'POST' && $p === '/api/login') {
             (new AuthController($this->pdo))->login();
-            return;
         }
 
         if ($m === 'GET' && $p === '/api/me') {
             (new AuthController($this->pdo))->me();
-            return;
         }
 
         if ($m === 'POST' && $p === '/api/logout') {
             (new AuthController($this->pdo))->logout();
-            return;
+        }
+
+        // Everything below requires login
+        // (optional but recommended — comment out if you want public read)
+        if (!in_array($p, ['/api/login', '/api/me', '/api/logout'], true)) {
+            requireLogin();
         }
 
         // ---------------- SUBJECTS ----------------
-
         if ($m === 'GET' && $p === '/api/subjects') {
             (new SubjectController($this->pdo))->list();
-            return;
         }
 
         if ($m === 'POST' && $p === '/api/subjects') {
+            // Only editor/admin create subjects (optional)
+            requireEditorOrAdmin();
             (new SubjectController($this->pdo))->create();
-            return;
         }
 
         // ---------------- QUESTIONS (Filtered) ----------------
-        // GET /api/questions/filter?subject_id=...&difficulty=...&type=...&q=...&limit=...&offset=...
-
         if ($m === 'GET' && $p === '/api/questions/filter') {
             (new QuestionController($this->pdo))->listFiltered();
-            return;
         }
 
         // ---------------- QUESTIONS (Collection) ----------------
-        // GET /api/questions?subject_id=...
-
         if ($m === 'GET' && $p === '/api/questions') {
             (new QuestionController($this->pdo))->list();
-            return;
         }
 
         if ($m === 'POST' && $p === '/api/questions') {
+            requireEditorOrAdmin();
             (new QuestionController($this->pdo))->create();
-            return;
         }
 
-        // ---------------- QUESTIONS (Single /api/questions/{id}) ----------------
-
+        // ---------------- QUESTIONS (Single) ----------------
         if (preg_match('#^/api/questions/(\d+)$#', $p, $matches)) {
             $id   = (int)$matches[1];
             $ctrl = new QuestionController($this->pdo);
 
             if ($m === 'GET') {
                 $ctrl->show($id);
-                return;
             }
 
             if ($m === 'PUT') {
+                requireEditorOrAdmin();
                 $ctrl->update($id);
-                return;
             }
 
             if ($m === 'DELETE') {
+                requireEditorOrAdmin();
                 $ctrl->delete($id);
-                return;
             }
 
-            http_response_code(405);
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['error' => 'method not allowed']);
-            return;
+            jsonOut(['error' => 'method not allowed'], 405);
         }
 
         // ---------------- EXAMS (Collection) ----------------
-        // GET /api/exams?subject_id=...
-
         if ($m === 'GET' && $p === '/api/exams') {
             (new ExamController($this->pdo))->list();
-            return;
         }
 
-        // POST /api/exams/auto  -> automatische Generierung
         if ($m === 'POST' && $p === '/api/exams/auto') {
+            requireEditorOrAdmin();
             (new ExamController($this->pdo))->createAuto();
-            return;
         }
 
-        // POST /api/exams/manual -> manuelle Auswahl
         if ($m === 'POST' && $p === '/api/exams/manual') {
+            requireEditorOrAdmin();
             (new ExamController($this->pdo))->createManual();
-            return;
         }
-        // ---------------- EXAMS (Duplicate) ----------------
-        // POST /api/exams/{id}/duplicate
 
+        // Duplicate
         if ($m === 'POST' && preg_match('#^/api/exams/(\d+)/duplicate$#', $p, $matches)) {
+            requireEditorOrAdmin();
             $id = (int)$matches[1];
             (new ExamController($this->pdo))->duplicate($id);
-            return;
-        }   
-        // ---------------- EXAMS (Single /api/exams/{id}) ----------------
+        }
 
+        // ---------------- EXAMS (Single) ----------------
         if (preg_match('#^/api/exams/(\d+)$#', $p, $matches)) {
             $id   = (int)$matches[1];
             $ctrl = new ExamController($this->pdo);
 
             if ($m === 'GET') {
                 $ctrl->show($id);
-                return;
             }
 
             if ($m === 'PUT') {
+                requireEditorOrAdmin();
                 $ctrl->update($id);
-                return;
             }
 
             if ($m === 'DELETE') {
+                requireEditorOrAdmin();
                 $ctrl->delete($id);
-                return;
             }
 
-            http_response_code(405);
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['error' => 'method not allowed']);
-            return;
-        }
-    
-        // ---------------- USERS ----------------
-
-    // GET /api/users            -> list all users
-    if ($m === 'GET' && $p === '/api/users') {
-        requireAdmin(); // only admins can see users
-        $stmt = $this->pdo->query("SELECT id, username, email, role FROM users ORDER BY id ASC");
-        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        header('Content-Type: application/json');
-        echo json_encode($users);
-        return;
-    }
-
-    // POST /api/users           -> create new user
-    if ($m === 'POST' && $p === '/api/users') {
-        (new UserController($this->pdo))->create();
-        return;
-    }
-
-    // PUT /api/users/{id}       -> update username/email/role
-    if ($m === 'PUT' && preg_match('#^/api/users/(\d+)$#', $p, $matches)) {
-        requireAdmin();
-        $id = (int)$matches[1];
-        $data = json_decode(file_get_contents('php://input'), true);
-
-        $username = trim($data['username'] ?? '');
-        $email    = trim($data['email'] ?? '');
-        $role     = $data['role'] ?? 'user';
-
-        if (!$username || !$email || !$role) {
-            http_response_code(400);
-            echo json_encode(['message'=>'Missing fields']);
-            return;
+            jsonOut(['error' => 'method not allowed'], 405);
         }
 
-        $stmt = $this->pdo->prepare("UPDATE users SET username=?, email=?, role=? WHERE id=?");
-        try {
-            $stmt->execute([$username, $email, $role, $id]);
-            echo json_encode(['ok'=>true]);
-        } catch (PDOException $e) {
-            http_response_code(409);
-            echo json_encode(['message'=>'Error updating user']);
+        // ---------------- USERS (admin only) ----------------
+        if ($m === 'GET' && $p === '/api/users') {
+            requireAdmin();
+            $stmt = $this->pdo->query("SELECT id, username, email, role FROM users ORDER BY id ASC");
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            jsonOut($users, 200);
         }
-        return;
-    }
 
-    // DELETE /api/users/{id}    -> delete user
-    if ($m === 'DELETE' && preg_match('#^/api/users/(\d+)$#', $p, $matches)) {
-        requireAdmin();
-        $id = (int)$matches[1];
-        $stmt = $this->pdo->prepare("DELETE FROM users WHERE id=?");
-        try {
-            $stmt->execute([$id]);
-            echo json_encode(['ok'=>true]);
-        } catch (PDOException $e) {
-            http_response_code(500);
-            echo json_encode(['message'=>'Error deleting user']);
+        if ($m === 'POST' && $p === '/api/users') {
+            requireAdmin();
+            (new UserController($this->pdo))->create();
         }
-        return;
-    }
 
+        if ($m === 'PUT' && preg_match('#^/api/users/(\d+)$#', $p, $matches)) {
+            requireAdmin();
+            $id = (int)$matches[1];
+            $data = body();
 
-        // ---------------- FALLBACK: 404 ----------------
+            $username = trim($data['username'] ?? '');
+            $email    = trim($data['email'] ?? '');
+            $role     = $data['role'] ?? 'viewer';
 
-        http_response_code(404);
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['error' => 'not found', 'path' => $p]);
+            if ($username === '' || $email === '' || $role === '') {
+                jsonOut(['message' => 'Missing fields'], 400);
+            }
+
+            if (!in_array($role, ['admin', 'editor', 'viewer'], true)) {
+                jsonOut(['message' => 'Invalid role'], 422);
+            }
+
+            $stmt = $this->pdo->prepare("UPDATE users SET username=?, email=?, role=? WHERE id=?");
+            try {
+                $stmt->execute([$username, $email, $role, $id]);
+                jsonOut(['ok' => true], 200);
+            } catch (PDOException $e) {
+                jsonOut(['message' => 'Error updating user'], 409);
+            }
+        }
+
+        if ($m === 'DELETE' && preg_match('#^/api/users/(\d+)$#', $p, $matches)) {
+            requireAdmin();
+            $id = (int)$matches[1];
+
+            $stmt = $this->pdo->prepare("DELETE FROM users WHERE id=?");
+            try {
+                $stmt->execute([$id]);
+                jsonOut(['ok' => true], 200);
+            } catch (PDOException $e) {
+                jsonOut(['message' => 'Error deleting user'], 500);
+            }
+        }
+
+        // ---------------- FALLBACK 404 ----------------
+        jsonOut(['error' => 'not found', 'path' => $p], 404);
     }
 }

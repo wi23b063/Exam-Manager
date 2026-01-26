@@ -2,52 +2,48 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <title>ExamManager</title>
+  <title>Exam Manager</title>
 
+  <!-- Bootstrap -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
     rel="stylesheet"
-    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
-    crossorigin="anonymous"
   />
 
+  <!-- Custom styles -->
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body>
 
-  <!-- header gets loaded here -->
+  <!-- HEADER (wird dynamisch geladen) -->
   <div id="header-placeholder"></div>
 
+  <!-- MAIN APP ROOT -->
   <main class="container my-4">
-<!-- LOGIN (visible by default) --> 
- <div id="view-login-placeholder"></div> 
-
-
- 
- <!-- APP (hidden by default) --> 
-  <div id="app-root" class="d-none"> 
-    <div id="view-manage-users-placeholder"></div> 
-    <div id="view-questions-placeholder"></div> 
-    <div id="view-exams-placeholder"></div> 
-    <div id="view-manual-exams-placeholder"></div> 
-    <div id="view-manage-exams-placeholder"></div>
-  </div>
-
+    <div id="app"></div>
   </main>
 
+  <!-- FOOTER (wird dynamisch geladen) -->
   <div id="footer-placeholder"></div>
 
-  <script src="js/helpers.js" defer></script>
-  <script src="js/login.js" defer></script>
-  <script src="js/auth.js" defer></script>
-  <script src="js/questions.js" defer></script>
-  <script src="js/exams.js" defer></script>
-  <script src="js/manualExams.js" defer></script>
-  <script src="js/manageExams.js" defer></script>
-  <script src="js/users.js" defer></script>
+  <!-- =====================================================
+       JS – Reihenfolge ist wichtig
+       ===================================================== -->
 
+  <!-- Helpers & globale Utils -->
+  <script src="js/helpers.js"></script>
 
-  <script src="js/main.js" defer></script>
+  <!-- Feature Scripts (Views) -->
+  <script src="js/questions.js"></script>
+  <script src="js/exams.js"></script>
+  <script src="js/manualExams.js"></script>
+  <script src="js/manageExams.js"></script>
+  <script src="js/users.js"></script>
+  <script src="js/viewer.js"></script>
+
+  <!-- SPA Controller (ALS LETZTES!) -->
+  <script src="js/main.js"></script>
+
 </body>
 </html>
