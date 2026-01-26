@@ -139,6 +139,7 @@ function initView(view) {
 
     case "manage-exams":
       if (typeof initManageExamsView === "function") initManageExamsView();
+      if (typeof loadSubjects === "function") loadSubjects();
       break;
 
     case "manage-users":
@@ -242,13 +243,40 @@ function onLoggedOut() {
 
 function applyRoleUI(user) {
   const role = user?.role || "viewer";
+  const isAdmin = role === "admin";
+  const isEditor = role === "editor";
+  const isViewer = role === "viewer";
 
-  toggle("btnManageUsers", role !== "admin");
-  toggle("btnManualExams", role === "viewer");
-  toggle("btnManageExams", role === "viewer");
-  toggle("btnViewerView", role !== "viewer");
+  // --- Buttons: default hide/show rules ---
+  // Viewer: NUR Viewer-Button
+  toggle("btnViewerView", !isViewer);
 
-  if (role === "viewer") loadView("viewer");
+  toggle("btnQuestions", isViewer);     // viewer versteckt
+  toggle("btnExams", isViewer);         // viewer versteckt
+  toggle("btnManualExams", true);       // viewer/editor/admin? -> du willst viewer nicht, also true bei viewer; unten überschreiben wir für editor/admin
+  toggle("btnManageExams", true);
+  toggle("btnManageUsers", true);
+
+  // Admin
+  if (isAdmin) {
+    toggle("btnQuestions", false);
+    toggle("btnExams", false);
+    toggle("btnManualExams", false);
+    toggle("btnManageExams", false);
+    toggle("btnManageUsers", false);
+  }
+
+  // Editor
+  if (isEditor) {
+    toggle("btnQuestions", false);
+    toggle("btnExams", false);
+    toggle("btnManualExams", false);
+    toggle("btnManageExams", false);
+    toggle("btnManageUsers", true); // editor nicht
+  }
+
+  // Default view je Rolle
+  if (isViewer) loadView("viewer");
   else loadView("questions");
 }
 

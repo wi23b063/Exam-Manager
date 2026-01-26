@@ -1,11 +1,37 @@
-<div id="view-viewer">
-  <h3>Available Exams</h3>
-  <select id="viewerExamSubject" class="form-select mb-3"></select>
-  <div id="viewerExamList"></div>
+<section id="view-viewer" class="view">
+  <h3 class="mb-3">View Exams &amp; Questions</h3>
 
-  <hr />
+  <div class="row g-3">
+    <!-- Exams -->
+    <div class="col-lg-6">
+      <div class="card p-3 mb-3">
+        <h5 class="mb-2">Exams</h5>
 
-  <h3>Questions</h3>
-  <select id="viewerQuestionSubject" class="form-select mb-3"></select>
-  <div id="viewerQuestionList"></div>
-</div>
+        <label class="form-label">Subject</label>
+        <select id="viewerExamSubject" class="form-select mb-3"></select>
+
+        <div id="viewerExamList" class="small"></div>
+      </div>
+    </div>
+
+    <!-- Exam details -->
+    <div class="col-lg-6">
+      <div class="card p-3 mb-3">
+        <h5 class="mb-2">Selected Exam</h5>
+        <div id="viewerExamDetail" class="small text-muted">
+          Select an exam to see its questions.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-4"/>
+
+  <!-- Questions (optional: keep this, or remove if you only want exams) -->
+  <div class="card p-3">
+    <h5 class="mb-2">Questions (by subject)</h5>
+    <label class="form-label">Subject</label>
+    <select id="viewerQuestionSubject" class="form-select mb-3"></select>
+    <div id="viewerQuestionList" class="small"></div>
+  </div>
+</section>
