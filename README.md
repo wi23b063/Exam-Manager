@@ -18,3 +18,25 @@ This tool makes that process easier by:
 - Random exam generation  
 - Customizable exam settings  
 - Easy-to-use graphical interface
+
+## How to Set Up 
+
+## Requirements
+- Docker & Docker Compose
+- Git
+- Modern Web Browser
+
+
+## Setup Instructions
+1. Clone the repository
+2. Start the application using Docker
+3. Open the application in the browser
+
+## Demo Accounts
+- Admin: admin / admin123
+- Editor & Viewer -> need to be added manual in the admin "manage User" page!
+
+## Roles & Permissions
+- Admin: full access
+- Editor: edit exams and questions
+- Viewer: read-only access
